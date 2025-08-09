@@ -1,13 +1,13 @@
 <template>
     <div class="min-h-screen grid grid-cols-1 md:grid-cols-2">
         <!-- Left Form Section -->
-        <div class="bg-[#F0F4FA] flex flex-col justify-center items-center px-4 py-10">
-            <div class="flex flex-col items-center mb-[22px] gap-[22px]">
+        <div class="bg-[#F0F4FA] flex flex-col justify-start items-center px-4 py-10 max-md:px-5">
+            <div class="flex flex-col items-center mb-[22px] gap-[22px] max-sm:text-center">
                 <img src="../../assets/images/icons/fav-icon.svg" alt="logo">
-                <h3 class="text-primary-medium">Create your Below Msrp Account</h3>
+                <h3 class="text-primary-medium max-md:text-[26px] max-md:font-semibold">Create your Below Msrp Account</h3>
             </div>
             <div
-                class="w-full max-w-[484px] bg-secondary-light border border-[#CAD5E9] rounded-2xl shadow-shadow-light px-6 py-7">
+                class="w-full max-w-[484px] bg-secondary-light border border-[#CAD5E9] rounded-2xl shadow-shadow-light px-6 py-7 max-md:max-w-full">
                 <form class="space-y-[19px]">
                     <div class="relative">
                         <label class="text-sm font-medium text-on-secondary">Full Name *</label>
@@ -101,7 +101,7 @@
         </div>
 
         <!-- Right Info Section -->
-        <div class="bg-white flex flex-col  items-start pt-[130px] pl-[130px]">
+        <div class="bg-white flex flex-col  items-start pt-[130px] pl-[130px] max-lg:px-10 max-lg:items-center max-md:p-5 max-sm:py-20">
             <img src="../../assets/images/man-with-car.png" alt="Car Trade" class="mb-12" />
             <div class="max-w-[377px] w-full text-left">
                 <h2 class="mb-4">Will you be trading in a car?</h2>

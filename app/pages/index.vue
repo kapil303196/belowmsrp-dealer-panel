@@ -1,11 +1,10 @@
 <template>
-  <div class="">
+  <div class="pb-20">
     <layout-app-header />
     <sections-stats-overview />
-    <sections-offers-analytics/>
-    <sections-offers-table /> 
-    <a href="/signup" class="text-blue-500 hover:underline">Go to Login Page</a>
-
+    <sections-offers-analytics />
+    <sections-offers-table />
+    <layout-primary-header />
 
     <!-- <p>
       Convert this Nuxt component to be fully JSON-based.

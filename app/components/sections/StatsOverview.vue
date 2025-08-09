@@ -1,16 +1,21 @@
-<template>
-  <section class="py-16 px-8">
-    <div class="flex items-center justify-between gap-10">
+F<template>
+  <section class="py-16 px-8 max-sm:px-5 max-sm:py-6">
+    <div class="flex items-center justify-between gap-10 max-sm:flex-col max-sm:items-start">
       <!-- Greeting Section -->
-      <div>
+      <div class="max-sm:text-left">
         <p class="large font-semibold">Hello Redcar Speed,</p>
         <h1 class="text-[#1E1E1E] opacity-55 font-medium">Welcome back</h1>
       </div>
       <!-- Stats Section -->
-      <div class="flex items-center justify-center">
+      <div class="relative flex items-center justify-center max-lg:grid max-lg:grid-cols-2 max-lg:gap-16 max-sm:justify-between max-sm:w-full">
+        <!-- Plus sign for small screens -->
+        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 lg:hidden">
+          <div class="w-[2px] h-[340px] bg-gradient-to-b from-transparent via-primary/40 to-transparent absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"></div>
+          <div class="h-[2px] w-[362px] bg-gradient-to-r from-transparent via-primary/40 to-transparent absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"></div>
+        </div>
         <template v-for="(stat, i) in stats" :key="stat.title + i">
-          <div class="w-full px-[37px]">
-            <div class="flex items-start justify-between gap-[35px] mb-7">
+          <div class="w-full px-[37px] max-lg:px-5 max-sm:p-0">
+            <div class="flex items-start justify-between gap-[35px] mb-7 max-lg:gap-5">
               <div>
                 <p class="text-sm text-primary mb-2 font-medium">{{ stat.title }}</p>
                 <div class="flex gap-[7px]">
@@ -22,13 +27,13 @@
                   <img :src="stat.weekIcon" alt="icon" />
                 </div>
               </div>
-              <button class="w-[54px] h-[54px] rounded-full flex items-center justify-center" :class="stat.buttonBg">
+              <button class="min-w-[54px] min-h-[54px] rounded-full flex items-center justify-center max-sm:hidden" :class="stat.buttonBg">
                 <img :src="stat.buttonIcon" alt="icon" />
               </button>
             </div>
             <span class="text-[41px] font-medium text-primary leading-[43px]">{{ stat.value }}</span>
           </div>
-          <span v-if="i < stats.length - 1" class="w-[1.5px] h-[182px] block bg-gradient-to-b from-transparent via-primary/20 to-transparent shrink-0"></span>
+          <span v-if="i < stats.length - 1" class="w-[1.5px] h-[182px] block bg-gradient-to-b from-transparent via-primary/20 to-transparent shrink-0 max-lg:hidden"></span>
         </template>
       </div>
     </div>

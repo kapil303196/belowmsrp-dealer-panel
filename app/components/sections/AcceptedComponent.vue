@@ -1,9 +1,9 @@
 <template>
-    <div class="p-7 max-sm:p-5 max-sm:pt-0">
+    <div class="p-7 max-sm:px-5">
         <!-- Small screen filter bar -->
         <div class="md:hidden flex flex-col gap-3 mb-4">
             <div class="flex items-center justify-between gap-2">
-                <h4 class="text-primary font-medium">All Offers</h4>
+                <h4 class="text-primary font-medium">Accepted Offers</h4>
                 <div class="relative">
                     <button @click="toggleDropdown('sortby')"
                         class="bg-[#E8EFFA] rounded-full py-2 px-5 flex items-center gap-2">
@@ -42,6 +42,70 @@
                     alt="icon">
             </div>
         </div>
+        <!-- Cards: Small screens only -->
+        <div class="md:hidden flex flex-col gap-4">
+            <div v-for="(offer, index) in paginatedOffers" :key="index" class="bg-[#E8EEF9] rounded-xl p-4 shadow">
+                <!-- Top: image, model, price -->
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-[10px] mb-[14px]">
+                        <div class="flex items-center space-x-3 flex-1">
+                            <img :src="offer.image" class="w-[71px] h-12 rounded object-cover" />
+                            <div>
+                                <div class="text-[13px] font-medium text-primary">{{ offer.model }}</div>
+                                <div class="text-[13px] font-medium text-primary opacity-50">{{ offer.price }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Action button at bottom -->
+                    <div class="flex items-center gap-2 justify-end mt-2">
+                        <button
+                            class="relative w-[38px] h-10 flex items-center justify-center flex-none ">
+                            <img src="../../assets/images/icons/download-icon.svg" alt="icon" class="w-5 h-5">
+                        </button>
+                    </div>
+                </div>
+                <!-- Customer details -->
+                <div class="text-sm text-primary mb-2 font-medium text-[15px]">
+                    <p class="text-sm text-primary pb-2 font-medium">Customer</p>
+                    <span
+                        class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
+                    <div class="flex flex-col gap-0.5">
+                        <div class="flex justify-between py-[6px]">
+                            <span class="text-[#081735] opacity-55">Name:</span>
+                            <span>{{ offer.customer.name }}</span>
+                        </div>
+                        <span
+                            class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
+                        <div class="flex justify-between py-[6px]">
+                            <span class="text-[#081735] opacity-55">Email:</span>
+                            <span>{{ offer.customer.email }}</span>
+                        </div>
+                        <span
+                            class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
+                        <div class="flex justify-between py-[6px]">
+                            <span class="text-[#081735] opacity-55">Phone:</span>
+                            <span>{{ offer.customer.phone }}</span>
+                        </div>
+                        <span
+                            class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
+                        <div class="flex justify-between py-[6px]">
+                            <span class="text-[#081735] opacity-55">Credit Score:</span>
+                            <span>{{ offer.customer.creditScore }}</span>
+                        </div>
+                        <div class="flex justify-between rounded-lg border-none bg-white p-2">
+                            <span class="text-[#081735] opacity-55">User Offer:</span>
+                            <span class="font-semibold">${{ offer.userOffer }}</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Comment -->
+                <div class="mt-[14px] mb-3"><span class="font-medium text-[15px] text-primary"></span> {{ offer.comments
+                    }}
+                </div>
+
+            </div>
+        </div>
+
         <!-- Desktop filter bar -->
         <div class="max-md:hidden flex items-center justify-between mb-10">
             <div class="flex items-center gap-[10px]">
@@ -102,8 +166,7 @@
                 </div>
             </div>
         </div>
-
-        <!-- Table: Desktop screens only -->
+        <!-- Desktop table  -->
         <div class="overflow-auto max-md:hidden">
             <table class="w-full text-left text-sm text-primary font-normal">
                 <thead>
@@ -119,13 +182,7 @@
                                     alt="">
                             </button>
                         </th>
-                        <th class="px-[14px] py-2 font-normal">
-                            <button>
-                                Location
-                                <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg"
-                                    alt="">
-                            </button>
-                        </th>
+                        <!-- Location column removed -->
                         <th class="px-[14px] py-2 font-normal">
                             <button>
                                 User Offer
@@ -133,13 +190,7 @@
                                     alt="">
                             </button>
                         </th>
-                        <th class="px-[14px] py-2 font-normal">
-                            <button>
-                                Car's MSRP
-                                <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg"
-                                    alt="">
-                            </button>
-                        </th>
+                        <!-- Car's MSRP column removed -->
                         <th class="px-[14px] py-2 font-normal">
                             <button>
                                 User Comments
@@ -147,13 +198,7 @@
                                     alt="">
                             </button>
                         </th>
-                        <th class="px-[14px] py-2 font-normal">
-                            <button>
-                                Selected Options
-                                <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg"
-                                    alt="">
-                            </button>
-                        </th>
+                        <!-- Selected Options column removed -->
                         <th class="px-[14px] py-2 font-normal">
                             <button>
                                 Actions
@@ -185,97 +230,20 @@
                             <div>Phone: {{ offer.customer.phone }}</div>
                             <div>Credit Score: {{ offer.customer.creditScore }}</div>
                         </td>
-                        <td class="px-[14px] py-2 text-sm">{{ offer.location }}</td>
+                        <!-- Location cell removed -->
                         <td class="px-[14px] py-2 text-sm font-medium">${{ offer.userOffer }}</td>
-                        <td class="px-[14px] py-2 text-sm">${{ offer.msrp }}</td>
+                        <!-- Car's MSRP cell removed -->
                         <td class="px-[14px] py-2 text-sm">{{ offer.comments }}</td>
-                        <td class="px-[14px] py-2 text-sm">{{ offer.selectedOptions }}</td>
+                        <!-- Selected Options cell removed -->
                         <td class="px-[14px] py-2 rounded-r-[10px]">
-                            <div class="flex items-center gap-1">
-                                <button
-                                    class="relative w-[38px] h-10 border border-[#2C8436] rounded-lg flex items-center justify-center flex-none ">
-                                    <img src="../../assets/images/icons/green-check.svg" alt="icon" class="w-5 h-5">
-                                </button>
-                                <button
-                                    class="relative w-[38px] h-10 border border-[#D53660] rounded-lg flex items-center justify-center flex-none ">
-                                    <img src="../../assets/images/icons/cross-icon.svg" alt="icon" class="w-5 h-5">
-                                </button>
-                                <button
-                                    class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none ">
-                                    <img src="../../assets/images/icons/equal-icon.svg" alt="icon" class="w-5 h-5">
-                                </button>
-                            </div>
+                            <button>
+                                <img src="../../assets/images/icons/download-icon.svg" alt="icon">
+                            </button>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
-
-        <!-- Cards: Small screens only -->
-        <div class="md:hidden flex flex-col gap-4">
-            <div v-for="(offer, index) in paginatedOffers" :key="index" class="bg-[#E8EEF9] rounded-xl p-4 shadow">
-                <!-- Top: image, model, price -->
-                <div class="flex items-center gap-[10px] mb-[14px]">
-                    <div class="flex items-center space-x-3 flex-1">
-                        <img :src="offer.image" class="w-[71px] h-12 rounded object-cover" />
-                        <div>
-                            <div class="text-[13px] font-medium text-primary">{{ offer.model }}</div>
-                            <div class="text-[13px] font-medium text-primary opacity-50">{{ offer.price }}</div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Customer details -->
-                <div class="text-sm text-primary mb-2 font-medium text-[15px]">
-                    <p class="text-sm text-primary pb-2 font-medium">Customer</p>
-                    <span
-                        class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
-                    <div class="flex flex-col gap-0.5">
-                        <div class="flex justify-between py-[6px]">
-                            <span class="text-[#081735] opacity-55">Name:</span>
-                            <span>{{ offer.customer.name }}</span>
-                        </div>
-                        <span
-                            class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
-                        <div class="flex justify-between py-[6px]">
-                            <span class="text-[#081735] opacity-55">Email:</span>
-                            <span>{{ offer.customer.email }}</span>
-                        </div>
-                        <span
-                            class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
-                        <div class="flex justify-between py-[6px]">
-                            <span class="text-[#081735] opacity-55">Credit Score:</span>
-                            <span>{{ offer.customer.creditScore }}</span>
-                        </div>
-                        <div class="rounded-lg border-none bg-white p-2 mt-3">
-                            <div class="flex justify-between  border-none p-2">
-                                <span class="text-[#081735] opacity-55">User Offer:</span>
-                                <span class="font-semibold">${{ offer.userOffer }}</span>
-                            </div>
-                            <span
-                                class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
-
-                            <div class="flex justify-between border-none p-2 mt-1">
-                                <span class="text-[#081735] opacity-55">Car's MSRP:</span>
-                                <span class="font-semibold">${{ offer.msrp }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Action buttons at bottom -->
-                <div class="flex items-center gap-2 center mt-[14px]">
-                    <button class="w-full h-10 border border-[#2C8436] rounded-lg flex items-center justify-center ">
-                        <img src="../../assets/images/icons/green-check.svg" alt="icon" class="w-5 h-5">
-                    </button>
-                    <button class="w-full h-10 border border-[#D53660] rounded-lg flex items-center justify-center ">
-                        <img src="../../assets/images/icons/cross-icon.svg" alt="icon" class="w-5 h-5">
-                    </button>
-                    <button class="w-full h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center ">
-                        <img src="../../assets/images/icons/equal-icon.svg" alt="icon" class="w-5 h-5">
-                    </button>
-                </div>
-            </div>
-        </div>
-
         <!-- Pagination Controls -->
         <div v-if="totalPages > 1" class="flex items-center justify-center gap-3 mt-4">
 
@@ -351,11 +319,11 @@ const allOffers = [
         location: '13th Street 47 ',
         userOffer: '109,000.00',
         msrp: '110,000.00',
-        comments: 'testing system (elias) ',
+        comments: 'Testing system (elias) communicate with clients. We need a clean ',
         selectedOptions: 'Motorsport Stripe Decal on Top in Black',
-        status: 'Accepted',
+        status: 'Countered',
     },
-    {
+     {
         image: vehicleImage2,
         model: 'Porsche Cayenne S Coupe',
         price: '$108,000.00',
@@ -368,11 +336,11 @@ const allOffers = [
         location: '13th Street 47 ',
         userOffer: '109,000.00',
         msrp: '110,000.00',
-        comments: 'testing system (elias) ',
+        comments: 'Testing system (elias) communicate with clients. We need a clean ',
         selectedOptions: 'Motorsport Stripe Decal on Top in Black',
-        status: 'Accepted',
+        status: 'Countered',
     },
-    {
+     {
         image: vehicleImage3,
         model: 'Porsche Cayenne S Coupe',
         price: '$108,000.00',
@@ -385,11 +353,11 @@ const allOffers = [
         location: '13th Street 47 ',
         userOffer: '109,000.00',
         msrp: '110,000.00',
-        comments: 'testing system (elias) ',
+        comments: 'Testing system (elias) communicate with clients. We need a clean ',
         selectedOptions: 'Motorsport Stripe Decal on Top in Black',
-        status: 'Accepted',
+        status: 'Countered',
     },
-      {
+       {
         image: vehicleImage,
         model: 'Porsche Cayenne S Coupe',
         price: '$108,000.00',
@@ -402,11 +370,11 @@ const allOffers = [
         location: '13th Street 47 ',
         userOffer: '109,000.00',
         msrp: '110,000.00',
-        comments: 'testing system (elias) ',
+        comments: 'Testing system (elias) communicate with clients. We need a clean ',
         selectedOptions: 'Motorsport Stripe Decal on Top in Black',
-        status: 'Accepted',
+        status: 'Countered',
     },
-    {
+     {
         image: vehicleImage2,
         model: 'Porsche Cayenne S Coupe',
         price: '$108,000.00',
@@ -419,11 +387,11 @@ const allOffers = [
         location: '13th Street 47 ',
         userOffer: '109,000.00',
         msrp: '110,000.00',
-        comments: 'testing system (elias) ',
+        comments: 'Testing system (elias) communicate with clients. We need a clean ',
         selectedOptions: 'Motorsport Stripe Decal on Top in Black',
-        status: 'Accepted',
+        status: 'Countered',
     },
-    {
+     {
         image: vehicleImage3,
         model: 'Porsche Cayenne S Coupe',
         price: '$108,000.00',
@@ -436,11 +404,11 @@ const allOffers = [
         location: '13th Street 47 ',
         userOffer: '109,000.00',
         msrp: '110,000.00',
-        comments: 'testing system (elias) ',
+        comments: 'Testing system (elias) communicate with clients. We need a clean ',
         selectedOptions: 'Motorsport Stripe Decal on Top in Black',
-        status: 'Accepted',
+        status: 'Countered',
     },
-      {
+       {
         image: vehicleImage,
         model: 'Porsche Cayenne S Coupe',
         price: '$108,000.00',
@@ -453,11 +421,11 @@ const allOffers = [
         location: '13th Street 47 ',
         userOffer: '109,000.00',
         msrp: '110,000.00',
-        comments: 'testing system (elias) ',
+        comments: 'Testing system (elias) communicate with clients. We need a clean ',
         selectedOptions: 'Motorsport Stripe Decal on Top in Black',
-        status: 'Accepted',
+        status: 'Countered',
     },
-    {
+     {
         image: vehicleImage2,
         model: 'Porsche Cayenne S Coupe',
         price: '$108,000.00',
@@ -470,11 +438,11 @@ const allOffers = [
         location: '13th Street 47 ',
         userOffer: '109,000.00',
         msrp: '110,000.00',
-        comments: 'testing system (elias) ',
+        comments: 'Testing system (elias) communicate with clients. We need a clean ',
         selectedOptions: 'Motorsport Stripe Decal on Top in Black',
-        status: 'Accepted',
+        status: 'Countered',
     },
-    {
+     {
         image: vehicleImage3,
         model: 'Porsche Cayenne S Coupe',
         price: '$108,000.00',
@@ -487,9 +455,60 @@ const allOffers = [
         location: '13th Street 47 ',
         userOffer: '109,000.00',
         msrp: '110,000.00',
-        comments: 'testing system (elias) ',
+        comments: 'Testing system (elias) communicate with clients. We need a clean ',
         selectedOptions: 'Motorsport Stripe Decal on Top in Black',
-        status: 'Accepted',
+        status: 'Countered',
+    },
+       {
+        image: vehicleImage,
+        model: 'Porsche Cayenne S Coupe',
+        price: '$108,000.00',
+        customer: {
+            name: 'Cameron Groom',
+            email: 'camerogroom@gmail.com',
+            phone: '(+1) 555-0182',
+            creditScore: 0,
+        },
+        location: '13th Street 47 ',
+        userOffer: '109,000.00',
+        msrp: '110,000.00',
+        comments: 'Testing system (elias) communicate with clients. We need a clean ',
+        selectedOptions: 'Motorsport Stripe Decal on Top in Black',
+        status: 'Countered',
+    },
+     {
+        image: vehicleImage2,
+        model: 'Porsche Cayenne S Coupe',
+        price: '$108,000.00',
+        customer: {
+            name: 'Cameron Groom',
+            email: 'camerogroom@gmail.com',
+            phone: '(+1) 555-0182',
+            creditScore: 0,
+        },
+        location: '13th Street 47 ',
+        userOffer: '109,000.00',
+        msrp: '110,000.00',
+        comments: 'Testing system (elias) communicate with clients. We need a clean ',
+        selectedOptions: 'Motorsport Stripe Decal on Top in Black',
+        status: 'Countered',
+    },
+     {
+        image: vehicleImage3,
+        model: 'Porsche Cayenne S Coupe',
+        price: '$108,000.00',
+        customer: {
+            name: 'Cameron Groom',
+            email: 'camerogroom@gmail.com',
+            phone: '(+1) 555-0182',
+            creditScore: 0,
+        },
+        location: '13th Street 47 ',
+        userOffer: '109,000.00',
+        msrp: '110,000.00',
+        comments: 'Testing system (elias) communicate with clients. We need a clean ',
+        selectedOptions: 'Motorsport Stripe Decal on Top in Black',
+        status: 'Countered',
     },
 ]
 

@@ -1,10 +1,9 @@
 <template>
-    <div class="p-7">
+    <div class="p-7 max-sm:px-5">
 
-        <!-- Filters -->
-        <div class="flex justify-between items-center mb-8">
+        <!-- Filters: Large screens -->
+        <div class="hidden md:flex justify-between items-center mb-8">
             <h4 class="text-primary font-medium">Offers</h4>
-
             <div class="flex space-x-[14px] bg-[#E8EEF9] rounded-full p-1">
                 <button v-for="(tab, index) in tabs" :key="index"
                     :class="['px-[15px] py-[7px] rounded-full text-sm text-[#6B7397] flex items-center gap-1', activeTab === tab ? 'bg-white shadow text-primary font-medium' : 'text-gray-500']"
@@ -13,7 +12,6 @@
                     {{ tab }}
                 </button>
             </div>
-
             <div class="relative">
                 <button class="bg-[#E8EFFA] text-xs px-3 py-[9px] rounded-full flex items-center gap-2">
                     This Week
@@ -22,13 +20,34 @@
             </div>
         </div>
 
-        <!-- Table -->
-        <div class="overflow-auto ">
-            <table class="w-full text-left text-sm text-primary font-normal">
+        <!-- Filters: Small screens -->
+        <div class="mb-5 flex flex-col gap-5 md:hidden">
+            <div class="flex justify-between items-center w-full">
+                <h4 class="text-primary font-medium">Offers</h4>
+                <div class="relative">
+                    <button class="bg-[#E8EFFA] text-xs px-3 py-[9px] rounded-full flex items-center gap-2">
+                        This Week
+                        <img src="~/assets/images/icons/angle-down-black.svg" alt="">
+                    </button>
+                </div>
+            </div>
+            <div class="flex items-center gap-0 bg-[#E8EEF9] rounded-full p-1 w-full overflow-x-auto whitespace-nowrap">
+                <button v-for="(tab, index) in tabs" :key="index"
+                    :class="['px-[15px] py-[7px] rounded-full text-sm text-[#6B7397] flex items-center justify-center gap-1 w-full min-w-28', activeTab === tab ? 'bg-white shadow text-primary font-medium' : 'text-gray-500']"
+                    @click="activeTab = tab">
+                    <img v-if="activeTab === tab" src="~/assets/images/icons/square-icon-check.svg" alt="">
+                    {{ tab }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Table: Large screens only -->
+        <div class="overflow-auto hidden md:block">
+            <table class="w-full text-left text-sm text-primary font-normal overflow-auto">
                 <thead class="">
                     <tr>
                         <th class="px-[14px] py-2 flex items-center gap-[10px] font-normal">
-                            <input type="checkbox" class="w-5 h-5 thick-black-checkbox" />
+                            <input type="checkbox" class="min-w-5 min-h-5 thick-black-checkbox" />
                             Model and name
                         </th>
                         <th class="px-[14px] py-2 font-normal">
@@ -65,7 +84,7 @@
                     <tr v-for="(offer, index) in offers" :key="index" class="border-t-4 border-[#F7FAFF] bg-[#E8EEF9]">
                         <td class="px-[14px] py-2 rounded-l-[10px]">
                             <div class="flex items-center gap-[10px] ">
-                                <input type="checkbox" class="w-5 h-5 thick-black-checkbox" />
+                                <input type="checkbox" class="min-w-5 min-h-5 thick-black-checkbox" />
                                 <div class="flex items-center space-x-3">
                                     <img :src="offer.image" class="w-[71px] h-12 rounded object-cover" />
                                     <div>
@@ -93,6 +112,62 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Cards: Small screens only -->
+        <div class="md:hidden flex flex-col gap-4">
+            <div v-for="(offer, index) in offers" :key="index" class="bg-[#E8EEF9] rounded-xl p-4 shadow">
+                <!-- Top: image, model, price, action button -->
+                <div class="flex items-center gap-[10px] mb-[14px]">
+                    <div class="flex items-center space-x-3 flex-1">
+                        <img :src="offer.image" class="w-[71px] h-12 rounded object-cover" />
+                        <div>
+                            <div class="text-[13px] font-medium text-primary">{{ offer.model }}</div>
+                            <div class="text-[13px] font-medium text-primary opacity-50">{{ offer.price }}</div>
+                        </div>
+                    </div>
+                    <button class="ml-auto flex-shrink-0">
+                        <img src="../../assets/images/icons/download-icon.svg" alt="icon">
+                    </button>
+                </div>
+                <!-- Customer details -->
+                <div class="text-sm text-primary mb-2 font-medium text-[15px]">
+                    <p class="text-sm text-primary pb-2 font-medium">Customer</p>
+                    <span
+                        class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
+                    <div class="flex flex-col gap-0.5">
+                        <div class="flex justify-between py-[6px]">
+                            <span class="text-[#081735] opacity-55">Name:</span>
+                            <span>{{ offer.customer.name }}</span>
+                        </div>
+                        <span
+                            class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
+                        <div class="flex justify-between py-[6px]">
+                            <span class="text-[#081735] opacity-55">Email:</span>
+                            <span>{{ offer.customer.email }}</span>
+                        </div>
+                        <span
+                            class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
+                        <div class="flex justify-between py-[6px]">
+                            <span class="text-[#081735] opacity-55">Phone:</span>
+                            <span>{{ offer.customer.phone }}</span>
+                        </div>
+                        <span
+                            class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
+                        <div class="flex justify-between py-[6px]">
+                            <span class="text-[#081735] opacity-55">Credit Score:</span>
+                            <span>{{ offer.customer.creditScore }}</span>
+                        </div>
+                        <div class="flex justify-between rounded-lg border-none bg-white p-2">
+                            <span class="text-[#081735] opacity-55">User Offer:</span>
+                            <span class="font-semibold">${{ offer.userOffer }}</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Comment -->
+                <div class="mt-[14px]"><span class="font-medium text-[15px] text-primary"></span> {{
+                    offer.comments }}</div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -101,61 +176,61 @@ import { ref, computed } from 'vue'
 import vehicleImage from '~/assets/images/vehicle-1.png'
 
 const tabs = [
-  'All Offers',
-  'Accepted',
-  'Rejected',
-  'Countered',
+    'All Offers',
+    'Accepted',
+    'Rejected',
+    'Countered',
 ];
 const activeTab = ref('All Offers');
 
 const allOffers = [
-  {
-    image: vehicleImage,
-    model: 'Porsche Cayenne S Coupe',
-    price: '$108,000.00',
-    customer: {
-      name: 'Cameron Groom',
-      email: 'camerogroom@gmail.com',
-      phone: '(+1) 555-0182',
-      creditScore: 0,
+    {
+        image: vehicleImage,
+        model: 'Porsche Cayenne S Coupe',
+        price: '$108,000.00',
+        customer: {
+            name: 'Cameron Groom',
+            email: 'camerogroom@gmail.com',
+            phone: '(+1) 555-0182',
+            creditScore: 0,
+        },
+        userOffer: '109,000.00',
+        comments: 'Testing system (elias) communicate with clients. We need a clean',
+        status: 'Accepted',
     },
-    userOffer: '109,000.00',
-    comments: 'Testing system (elias) communicate with clients. We need a clean',
-    status: 'Accepted',
-  },
-  {
-    image: vehicleImage,
-    model: 'Mercedes-Benz z class',
-    price: '$108,000.00',
-    customer: {
-      name: 'Cameron Groom',
-      email: 'camerogroom@gmail.com',
-      phone: '(+1) 555-0182',
-      creditScore: 0,
+    {
+        image: vehicleImage,
+        model: 'Mercedes-Benz z class',
+        price: '$108,000.00',
+        customer: {
+            name: 'Cameron Groom',
+            email: 'camerogroom@gmail.com',
+            phone: '(+1) 555-0182',
+            creditScore: 0,
+        },
+        userOffer: '109,000.00',
+        comments: 'Testing system (elias) communicate with clients. We need a clean',
+        status: 'Rejected',
     },
-    userOffer: '109,000.00',
-    comments: 'Testing system (elias) communicate with clients. We need a clean',
-    status: 'Rejected',
-  },
-  {
-    image: vehicleImage,
-    model: 'Mercedes-Benz c class',
-    price: '$108,000.00',
-    customer: {
-      name: 'Cameron Groom',
-      email: 'camerogroom@gmail.com',
-      phone: '(+1) 555-0182',
-      creditScore: 0,
+    {
+        image: vehicleImage,
+        model: 'Mercedes-Benz c class',
+        price: '$108,000.00',
+        customer: {
+            name: 'Cameron Groom',
+            email: 'camerogroom@gmail.com',
+            phone: '(+1) 555-0182',
+            creditScore: 0,
+        },
+        userOffer: '109,000.00',
+        comments: 'Testing system (elias) communicate with clients. We need a clean',
+        status: 'Countered',
     },
-    userOffer: '109,000.00',
-    comments: 'Testing system (elias) communicate with clients. We need a clean',
-    status: 'Countered',
-  },
 ]
 
 const offers = computed(() => {
-  if (activeTab.value === 'All Offers') return allOffers;
-  return allOffers.filter(offer => offer.status === activeTab.value);
+    if (activeTab.value === 'All Offers') return allOffers;
+    return allOffers.filter(offer => offer.status === activeTab.value);
 });
 </script>
 
@@ -173,10 +248,12 @@ const offers = computed(() => {
     transition: border-color 0.2s;
     vertical-align: middle;
 }
+
 .thick-black-checkbox:checked {
     background-color: #fff;
     border: 2px solid #081735;
 }
+
 .thick-black-checkbox:checked::after {
     content: '';
     display: block;
@@ -188,5 +265,20 @@ const offers = computed(() => {
     border: solid #081735;
     border-width: 0 3px 3px 0;
     transform: rotate(45deg);
+}
+
+table,
+td,
+th {
+    min-width: 120px;
+}
+
+@media screen and (max-width: 1023px) {
+
+    table,
+    td,
+    th {
+        min-width: 220px;
+    }
 }
 </style>

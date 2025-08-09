@@ -1,7 +1,7 @@
 <template>
     <div class="pb-20">
         <LayoutAppHeader />
-        <SectionsAllOffersComponent />
+        <SectionsAcceptedComponent />
         <layout-primary-header />
     </div>
 </template>
