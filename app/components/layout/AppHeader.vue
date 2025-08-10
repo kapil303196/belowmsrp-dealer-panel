@@ -21,14 +21,34 @@
             </ul>
         </nav>
         <!-- Right: Icons -->
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center space-x-3 relative" ref="headerDropdownRef">
             <button v-for="(item, i) in rightIcons" :key="i" :class="[
                 'w-[46px] h-[46px] rounded-full flex items-center justify-center',
                 item.bg,
                 (item.alt === 'search' || item.alt === 'chat') ? 'max-md:hidden' : ''
-            ]">
+            ]" @click="handleRightIconClick(item.alt)">
                 <img :src="item.icon" :alt="item.alt" />
             </button>
+
+            <!-- Search Bar Dropdown -->
+            <div v-if="showSearch" class="absolute right-0 top-14 bg-white shadow-lg rounded-lg p-4 w-72 z-20">
+                <input type="text" placeholder="Search..." class="w-full border rounded px-3 py-2 focus:outline-none" />
+            </div>
+            <!-- Chat Dropdown -->
+            <div v-if="showChat" class="absolute right-0 top-14 bg-white shadow-lg rounded-lg p-4 w-72 z-20">
+                <div class="font-semibold mb-2">Chat</div>
+                <div class="text-gray-500 text-sm">No new messages.</div>
+            </div>
+            <!-- Notification Dropdown -->
+            <div v-if="showNotification" class="absolute right-0 top-14 bg-white shadow-lg rounded-lg p-4 w-72 z-20">
+                <div class="font-semibold mb-2">Notifications</div>
+                <div class="text-gray-500 text-sm">No new notifications.</div>
+            </div>
+            <!-- Profile Dropdown -->
+            <div v-if="showProfile" class="absolute right-0 top-14 bg-white shadow-lg rounded-lg p-4 w-56 z-20">
+                <div class="font-semibold mb-2">Profile</div>
+                <div class="text-gray-500 text-sm">User profile actions here.</div>
+            </div>
         </div>
     </header>
 </template>
@@ -62,4 +82,47 @@ const rightIcons = [
     { icon: notificationIcon, alt: 'notification', bg: 'bg-[#E8EFFA]' },
     { icon: profileIcon, alt: 'profile', bg: 'bg-white' },
 ];
+import { ref, onMounted, onBeforeUnmount } from 'vue';
+const headerDropdownRef = ref<HTMLElement | null>(null);
+
+function closeAllDropdowns() {
+    showSearch.value = false;
+    showChat.value = false;
+    showNotification.value = false;
+    showProfile.value = false;
+}
+
+function handleHeaderClickOutside(e: MouseEvent) {
+    if (
+        (showSearch.value || showChat.value || showNotification.value || showProfile.value) &&
+        headerDropdownRef.value &&
+        !headerDropdownRef.value.contains(e.target as Node)
+    ) {
+        closeAllDropdowns();
+    }
+}
+
+onMounted(() => {
+    window.addEventListener('click', handleHeaderClickOutside);
+});
+onBeforeUnmount(() => {
+    window.removeEventListener('click', handleHeaderClickOutside);
+});
+
+// Dropdown states
+const showSearch = ref(false);
+const showChat = ref(false);
+const showNotification = ref(false);
+const showProfile = ref(false);
+
+function handleRightIconClick(type: string) {
+    showSearch.value = false;
+    showChat.value = false;
+    showNotification.value = false;
+    showProfile.value = false;
+    if (type === 'search') showSearch.value = true;
+    if (type === 'chat') showChat.value = true;
+    if (type === 'notification') showNotification.value = true;
+    if (type === 'profile') showProfile.value = true;
+}
 </script>

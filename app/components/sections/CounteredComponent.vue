@@ -1,49 +1,12 @@
 <template>
 
-
     <div class="p-7 max-sm:px-5">
         <!-- Small screen filter bar -->
-        <div class="md:hidden flex flex-col gap-3 mb-4">
-            <div class="flex items-center justify-between gap-2">
-                <h4 class="text-primary font-medium">Countered Offers</h4>
-                <div class="relative">
-                    <button @click="toggleDropdown('sortby')"
-                        class="bg-[#E8EFFA] rounded-full py-2 px-5 flex items-center gap-2">
-                        <span>Sort By</span>
-                        <img src="../../assets/images/icons/angle-down-black.svg" alt="icon">
-                    </button>
-                    <div v-if="dropdownOpen === 'sortby'"
-                        class="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg z-20">
-                        <ul>
-                            <li class="px-4 py-2 font-semibold text-primary">Status</li>
-                            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">Accepted</li>
-                            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">Rejected</li>
-                            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">Countered</li>
-                            <li>
-                                <hr class="my-1 border-t">
-                            </li>
-                            <li class="px-4 py-2 font-semibold text-primary">Model</li>
-                            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">Porsche</li>
-                            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">Mercedes</li>
-                            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">BMW</li>
-                            <li>
-                                <hr class="my-1 border-t">
-                            </li>
-                            <li class="px-4 py-2 font-semibold text-primary">Date</li>
-                            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">This week</li>
-                            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">Last week</li>
-                            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">This month</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <div class="relative mt-1">
-                <input type="search" class="bg-[#E8EEF9] p-3 pl-10 outline-none w-full rounded-full border"
-                    placeholder="Search by name, model, or amount...">
-                <img class="absolute left-4 top-1/2 -translate-y-1/2" src="../../assets/images/icons/search-icon.svg"
-                    alt="icon">
-            </div>
-        </div>
+        <ui-mobile-filter-bar title="Countered Offers" />
+
+        <!-- Desktop filter bar -->
+        <UiDesktopFilterBar title="Countered Offers" />
+
         <!-- Cards: Small screens only -->
         <div class="md:hidden flex flex-col gap-4">
             <div v-for="(offer, index) in paginatedOffers" :key="index" class="bg-[#E8EEF9] rounded-xl p-4 shadow">
@@ -88,7 +51,8 @@
                     </div>
                 </div>
                 <!-- Comments -->
-                <div class="mt-[14px] mb-[14px]"><span class="font-medium text-[15px] text-primary"></span> {{ offer.comments
+                <div class="mt-[14px] mb-[14px]"><span class="font-medium text-[15px] text-primary"></span> {{
+                    offer.comments
                     }}
                 </div>
                 <p class="font-medium text-primary opacity-55 mb-1 text-sm">Dealer Comments</p>
@@ -96,66 +60,7 @@
                 </div>
             </div>
         </div>
-        <!-- Desktop filter bar -->
-        <div class="max-md:hidden flex items-center justify-between mb-10">
-            <div class="flex items-center gap-[10px]">
-                <h4 class="text-primary font-medium text-nowrap">All Offers</h4>
-                <div class="relative">
-                    <input type="search" class="bg-transparent p-3 pl-10 outline-none w-[340px] max-lg:w-[220px]"
-                        placeholder="Search by name, model, or amount...">
-                    <img class="absolute left-2 top-1/2 -translate-y-1/2"
-                        src="../../assets/images/icons/search-icon.svg" alt="icon">
-                </div>
-            </div>
-            <div class="bg-[#E8EFFA] rounded-full py-4 px-5 flex items-center justify-between">
-                <span class="pr-4 border-r">Sort By</span>
-                <div class="relative">
-                    <button @click="toggleDropdown('status')"
-                        class="flex items-center gap-[98px] px-4 border-r max-lg:gap-3">
-                        <span>Status</span>
-                        <img src="../../assets/images/icons/angle-down-black.svg" alt="icon">
-                    </button>
-                    <div v-if="dropdownOpen === 'status'"
-                        class="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-10">
-                        <ul>
-                            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">Accepted</li>
-                            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">Rejected</li>
-                            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">Countered</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="relative">
-                    <button @click="toggleDropdown('model')"
-                        class="flex items-center gap-[98px] px-4 border-r max-lg:gap-3">
-                        <span>Model</span>
-                        <img src="../../assets/images/icons/angle-down-black.svg" alt="icon">
-                    </button>
-                    <div v-if="dropdownOpen === 'model'"
-                        class="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-10">
-                        <ul>
-                            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">Porsche</li>
-                            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">Mercedes</li>
-                            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">BMW</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="relative">
-                    <button @click="toggleDropdown('week')"
-                        class="flex items-center gap-[98px] px-4 border-r max-lg:gap-3">
-                        <span>This week</span>
-                        <img src="../../assets/images/icons/angle-down-black.svg" alt="icon">
-                    </button>
-                    <div v-if="dropdownOpen === 'week'"
-                        class="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-10">
-                        <ul>
-                            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">This week</li>
-                            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">Last week</li>
-                            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">This month</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
+
         <!-- Desktop table -->
         <div class="overflow-auto max-md:hidden">
             <table class="w-full text-left text-sm text-primary font-normal">
@@ -230,31 +135,15 @@
                 </tbody>
             </table>
         </div>
-        <!-- Pagination Controls -->
-        <div v-if="totalPages > 1" class="flex items-center justify-center gap-3 mt-4">
 
-            <div class="flex items-center gap-5">
-                <button :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">
-                    <img src="~/assets/images/icons/prev-icon.svg" alt="">
-                </button>
-                <button v-for="page in totalPages" :key="page"
-                    class="px-2 py-1 w-8 h-8 rounded-full border text-[15px] font-semibold"
-                    :class="{ 'bg-[#2C73DB] text-white': page === currentPage }" @click="goToPage(page)">
-                    {{ page }}
-                </button>
-                <button :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">
-                    <img src="~/assets/images/icons/next-icon.svg" alt="">
-                </button>
-            </div>
-            <button class="bg-[#E8EFFA] text-xs px-3 py-[9px] rounded-full flex items-center gap-2">
-                {{ allOffers.length }} entries
-                <img src="~/assets/images/icons/angle-down-black.svg" alt="">
-            </button>
-        </div>
+        <!-- Pagination Controls -->
+        <UiPaginationBar :currentPage="currentPage" :totalPages="totalPages" :totalEntries="allOffers.length"
+            @goToPage="goToPage" />
     </div>
 </template>
 
 <script setup>
+
 
 import vehicleImage from '~/assets/images/vehicle-1.png'
 import vehicleImage2 from '~/assets/images/car2.png'
@@ -306,7 +195,7 @@ const allOffers = [
         DealerComments: 'Reference site about car deal, giving information on its origins ',
         status: 'Countered',
     },
-        {
+    {
         image: vehicleImage2,
         model: 'Porsche Cayenne S Coupe',
         price: '$108,000.00',
@@ -320,7 +209,7 @@ const allOffers = [
         DealerComments: 'Reference site about car deal, giving information on its origins ',
         status: 'Countered',
     },
-        {
+    {
         image: vehicleImage3,
         model: 'Porsche Cayenne S Coupe',
         price: '$108,000.00',
@@ -334,7 +223,7 @@ const allOffers = [
         DealerComments: 'Reference site about car deal, giving information on its origins ',
         status: 'Countered',
     },
-      {
+    {
         image: vehicleImage,
         model: 'Porsche Cayenne S Coupe',
         price: '$108,000.00',
@@ -348,7 +237,7 @@ const allOffers = [
         DealerComments: 'Reference site about car deal, giving information on its origins ',
         status: 'Countered',
     },
-        {
+    {
         image: vehicleImage2,
         model: 'Porsche Cayenne S Coupe',
         price: '$108,000.00',
@@ -362,7 +251,7 @@ const allOffers = [
         DealerComments: 'Reference site about car deal, giving information on its origins ',
         status: 'Countered',
     },
-        {
+    {
         image: vehicleImage3,
         model: 'Porsche Cayenne S Coupe',
         price: '$108,000.00',
@@ -376,7 +265,7 @@ const allOffers = [
         DealerComments: 'Reference site about car deal, giving information on its origins ',
         status: 'Countered',
     },
-      {
+    {
         image: vehicleImage,
         model: 'Porsche Cayenne S Coupe',
         price: '$108,000.00',
@@ -390,7 +279,7 @@ const allOffers = [
         DealerComments: 'Reference site about car deal, giving information on its origins ',
         status: 'Countered',
     },
-        {
+    {
         image: vehicleImage2,
         model: 'Porsche Cayenne S Coupe',
         price: '$108,000.00',
@@ -404,7 +293,7 @@ const allOffers = [
         DealerComments: 'Reference site about car deal, giving information on its origins ',
         status: 'Countered',
     },
-        {
+    {
         image: vehicleImage3,
         model: 'Porsche Cayenne S Coupe',
         price: '$108,000.00',
@@ -418,7 +307,7 @@ const allOffers = [
         DealerComments: 'Reference site about car deal, giving information on its origins ',
         status: 'Countered',
     },
-      {
+    {
         image: vehicleImage,
         model: 'Porsche Cayenne S Coupe',
         price: '$108,000.00',
@@ -432,7 +321,7 @@ const allOffers = [
         DealerComments: 'Reference site about car deal, giving information on its origins ',
         status: 'Countered',
     },
-        {
+    {
         image: vehicleImage2,
         model: 'Porsche Cayenne S Coupe',
         price: '$108,000.00',
@@ -446,7 +335,7 @@ const allOffers = [
         DealerComments: 'Reference site about car deal, giving information on its origins ',
         status: 'Countered',
     },
-        {
+    {
         image: vehicleImage3,
         model: 'Porsche Cayenne S Coupe',
         price: '$108,000.00',
@@ -478,12 +367,6 @@ const allOffers = [
     transition: border-color 0.2s;
     vertical-align: middle;
 }
-td, th {
-    max-width: 220px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
 
 .thick-black-checkbox:checked {
     background-color: #fff;
@@ -494,12 +377,21 @@ td, th {
     content: '';
     display: block;
     position: absolute;
-    left: 3px;
+    left: 5px;
     top: 0px;
-    width: 5px;
-    height: 10px;
+    width: 7px;
+    height: 13px;
     border: solid #081735;
     border-width: 0 3px 3px 0;
     transform: rotate(45deg);
 }
+
+td,
+th {
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 </style>

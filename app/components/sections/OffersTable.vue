@@ -12,11 +12,19 @@
                     {{ tab }}
                 </button>
             </div>
-            <div class="relative">
-                <button class="bg-[#E8EFFA] text-xs px-3 py-[9px] rounded-full flex items-center gap-2">
-                    This Week
+            <div class="relative" ref="desktopDropdownRef">
+                <button class="bg-[#E8EFFA] text-xs px-3 py-[9px] rounded-full flex items-center gap-2"
+                    @click="toggleDropdown('desktop')">
+                    {{ selectedFilter }}
                     <img src="~/assets/images/icons/angle-down-black.svg" alt="">
                 </button>
+                <div v-if="dropdownOpen === 'desktop'"
+                    class="absolute right-0 mt-2 w-40 bg-[#F7FAFF] border rounded-lg shadow-lg z-10">
+                    <ul>
+                        <li v-for="option in filterOptions" :key="option" @click="selectFilter(option)"
+                            class="px-4 py-2 hover:bg-gray-100 cursor-pointer">{{ option }}</li>
+                    </ul>
+                </div>
             </div>
         </div>
 
@@ -24,11 +32,19 @@
         <div class="mb-5 flex flex-col gap-5 md:hidden">
             <div class="flex justify-between items-center w-full">
                 <h4 class="text-primary font-medium">Offers</h4>
-                <div class="relative">
-                    <button class="bg-[#E8EFFA] text-xs px-3 py-[9px] rounded-full flex items-center gap-2">
-                        This Week
+                <div class="relative" ref="mobileDropdownRef">
+                    <button class="bg-[#E8EFFA] text-xs px-3 py-[9px] rounded-full flex items-center gap-2"
+                        @click="toggleDropdown('mobile')">
+                        {{ selectedFilter }}
                         <img src="~/assets/images/icons/angle-down-black.svg" alt="">
                     </button>
+                    <div v-if="dropdownOpen === 'mobile'"
+                        class="absolute right-0 mt-2 w-40 bg-[#F7FAFF]  rounded-lg border  shadow-lg z-10">
+                        <ul>
+                            <li v-for="option in filterOptions" :key="option" @click="selectFilter(option)"
+                                class="px-4 py-2 hover:bg-gray-100 cursor-pointer">{{ option }}</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
             <div class="flex items-center gap-0 bg-[#E8EEF9] rounded-full p-1 w-full overflow-x-auto whitespace-nowrap">
@@ -172,7 +188,35 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+const filterOptions = ['This Week', 'Last Week', 'This Month']
+const selectedFilter = ref('This Week')
+const dropdownOpen = ref(null)
+const desktopDropdownRef = ref(null)
+const mobileDropdownRef = ref(null)
+
+function toggleDropdown(type) {
+    dropdownOpen.value = dropdownOpen.value === type ? null : type
+}
+function selectFilter(option) {
+    selectedFilter.value = option
+    dropdownOpen.value = null
+}
+
+function handleClickOutside(e) {
+    if (dropdownOpen.value === 'desktop' && desktopDropdownRef.value && !desktopDropdownRef.value.contains(e.target)) {
+        dropdownOpen.value = null
+    }
+    if (dropdownOpen.value === 'mobile' && mobileDropdownRef.value && !mobileDropdownRef.value.contains(e.target)) {
+        dropdownOpen.value = null
+    }
+}
+onMounted(() => {
+    window.addEventListener('click', handleClickOutside)
+})
+onBeforeUnmount(() => {
+    window.removeEventListener('click', handleClickOutside)
+})
 import vehicleImage from '~/assets/images/vehicle-1.png'
 
 const tabs = [
@@ -258,10 +302,10 @@ const offers = computed(() => {
     content: '';
     display: block;
     position: absolute;
-    left: 3px;
+    left: 5px;
     top: 0px;
-    width: 5px;
-    height: 10px;
+    width: 7px;
+    height: 13px;
     border: solid #081735;
     border-width: 0 3px 3px 0;
     transform: rotate(45deg);
