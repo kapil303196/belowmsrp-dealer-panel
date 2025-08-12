@@ -47,7 +47,14 @@
             <!-- Profile Dropdown -->
             <div v-if="showProfile" class="absolute right-0 top-14 bg-white shadow-lg rounded-lg p-4 w-56 z-20">
                 <div class="font-semibold mb-2">Profile</div>
-                <div class="text-gray-500 text-sm">User profile actions here.</div>
+                <div class="py-1">
+                    <span class="text-gray-600 text-sm block mb-1">{{ user?.name || 'User' }}</span>
+                    <span class="text-gray-400 text-xs block mb-3">{{ user?.email }}</span>
+                    <button @click="handleLogout" 
+                      class="w-full py-2 px-3 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm transition-colors">
+                        Logout
+                    </button>
+                </div>
             </div>
         </div>
     </header>
@@ -82,8 +89,11 @@ const rightIcons = [
     { icon: notificationIcon, alt: 'notification', bg: 'bg-[#E8EFFA]' },
     { icon: profileIcon, alt: 'profile', bg: 'bg-white' },
 ];
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
+
 const headerDropdownRef = ref<HTMLElement | null>(null);
+const { authenticated, user, logout: authLogout } = useAuth();
+const router = useRouter();
 
 function closeAllDropdowns() {
     showSearch.value = false;
@@ -124,5 +134,11 @@ function handleRightIconClick(type: string) {
     if (type === 'chat') showChat.value = true;
     if (type === 'notification') showNotification.value = true;
     if (type === 'profile') showProfile.value = true;
+}
+
+function handleLogout() {
+    authLogout();
+    closeAllDropdowns();
+    router.push('/login');
 }
 </script>

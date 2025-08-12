@@ -8,12 +8,16 @@
                     <h3 class="text-primary-medium mb-3">Login to your account</h3>
                     <p class="text-[#A0AEC0] text-sm mb-7 max-sm:mb-5">Enter your credentials to access your account</p>
                 </div>
-                <form class="space-y-[19px]">
+                <form @submit.prevent="handleLogin" class="space-y-[19px]">
+                    <div v-if="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+                        {{ errorMessage }}
+                    </div>
+                    
                     <div>
                         <label class="text-sm font-medium text-on-secondary">Email Address*</label>
                         <div
                             class="relative w-full h-[46px] mt-2  border bg-white border-border rounded-lg px-4 pr-10 py-2 outline-secondary">
-                            <input type="email" placeholder="Enter email address"
+                            <input v-model="email" type="email" placeholder="Enter email address"
                                 class="w-full h-full text-sm outline-none" />
                             <img src="../../assets/images/icons/at-the-rate.svg" alt="icon"
                                 class="absolute top-1/2 right-4  -translate-y-1/2" />
@@ -24,7 +28,7 @@
                         <label class="text-sm font-medium text-on-secondary">Password*</label>
                         <div
                             class="relative w-full h-[46px] mt-2  border bg-white border-border rounded-lg px-4 pr-10 py-2 outline-secondary">
-                            <input type="password" placeholder="Enter password"
+                            <input v-model="password" type="password" placeholder="Enter password"
                                 class="w-full h-full text-sm outline-none" />
                             <img src="../../assets/images/icons/eye-password.svg" alt="icon"
                                 class="absolute top-1/2 right-4  -translate-y-1/2" />
@@ -57,7 +61,30 @@
 </template>
 
 <script setup>
-// Add form handling logic or validation here if needed
+// Use our auth composable
+const { login } = useAuth()
+
+const email = ref('')
+const password = ref('')
+const errorMessage = ref('')
+
+const handleLogin = () => {
+  // Clear any previous error message
+  errorMessage.value = ''
+  
+  if (!email.value || !password.value) {
+    errorMessage.value = 'Please enter both email and password'
+    return
+  }
+
+  const success = login(email.value, password.value)
+  
+  if (success) {
+    navigateTo('/')
+  } else {
+    errorMessage.value = 'Invalid credentials. Try using admin@example.com / password'
+  }
+}
 </script>
 
 <style scoped>
