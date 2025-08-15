@@ -6,6 +6,20 @@
         <!-- Desktop filter bar -->
         <UiDesktopFilterBar title="Rejected Offers" v-model:search="searchText" v-model:model="selectedModel" />
 
+        <!-- Loading state -->
+        <div v-if="isLoading" class="flex items-center justify-center py-10 text-primary/70">
+            <svg class="animate-spin h-6 w-6" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+            <span class="ml-2">Loading...</span>
+        </div>
+
+        <!-- Empty state -->
+        <div v-if="!isLoading && paginatedOffers.length === 0" class="flex items-center justify-center py-10 text-primary/60">
+            No offers to display.
+        </div>
+
         <!-- Cards: Small screens only -->
         <div class="md:hidden flex flex-col gap-4">
             <div v-for="(offer, index) in paginatedOffers" :key="index" class="bg-[#E8EEF9] rounded-xl p-4 shadow">
@@ -49,7 +63,7 @@
         </div>
 
         <!-- Desktop table  -->
-        <div class="overflow-auto max-md:hidden">
+        <div v-if="!isLoading && paginatedOffers.length" class="overflow-auto max-md:hidden">
             <table class="w-full text-left text-sm text-primary font-normal">
                 <thead>
                     <tr>
@@ -114,7 +128,7 @@
             </table>
         </div>
         <!-- Pagination Controls -->
-        <UiPaginationBar :currentPage="currentPage" :totalPages="totalPages" :totalEntries="allOffers.length"
+        <UiPaginationBar v-if="!isLoading && totalPages > 0" :currentPage="currentPage" :totalPages="totalPages" :totalEntries="allOffers.length"
             @goToPage="goToPage" />
     </div>
 </template>
@@ -142,6 +156,7 @@ const currentPage = ref(1)
 const allOffers = ref([])
 const searchText = ref('')
 const selectedModel = ref('')
+const isLoading = ref(false)
 
 const filteredOffers = computed(() => {
     const s = searchText.value.trim().toLowerCase()
@@ -173,12 +188,15 @@ const { apiGet } = useApi()
 
 const getRejectedOffers = async () => {
     try {
+        isLoading.value = true
         const dealerId = JSON.parse(localStorage.getItem('auth')).user._id;
         const response = await apiGet(`/bid/get-dealer-bid/reject/${dealerId}`)
         console.log('response', response.data)
         allOffers.value = mapApiData(response.data)
     } catch (error) {
         console.error('Error fetching rejected offers:', error)
+    } finally {
+        isLoading.value = false
     }
 }
 
