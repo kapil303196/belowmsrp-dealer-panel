@@ -120,11 +120,7 @@
 </template>
 
 <script setup>
-
-import vehicleImage from '~/assets/images/vehicle-1.png'
-import vehicleImage2 from '~/assets/images/car2.png'
-import vehicleImage3 from '~/assets/images/car3.png'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 const dropdownOpen = ref(null)
 function toggleDropdown(type) {
@@ -143,12 +139,13 @@ if (typeof window !== 'undefined') {
 
 const pageSize = 6
 const currentPage = ref(1)
+const allOffers = ref([])
 
-const totalPages = computed(() => Math.ceil(allOffers.length / pageSize))
+const totalPages = computed(() => Math.ceil(allOffers.value.length / pageSize))
 
 const paginatedOffers = computed(() => {
     const start = (currentPage.value - 1) * pageSize
-    return allOffers.slice(start, start + pageSize)
+    return allOffers.value.slice(start, start + pageSize)
 })
 
 function goToPage(page) {
@@ -156,161 +153,44 @@ function goToPage(page) {
         currentPage.value = page
     }
 }
-const allOffers = [
-    {
-        image: vehicleImage,
-        model: 'Porsche Cayenne S Coupe',
-        price: '$108,000.00',
+
+// API call to get rejected offers
+const { apiGet } = useApi()
+
+const getRejectedOffers = async () => {
+    try {
+        const dealerId = JSON.parse(localStorage.getItem('auth')).user._id;
+        const response = await apiGet(`/bid/get-dealer-bid/reject/${dealerId}`)
+        console.log('response', response.data)
+        allOffers.value = mapApiData(response.data)
+    } catch (error) {
+        console.error('Error fetching rejected offers:', error)
+    }
+}
+
+const mapApiData = (apiResponse) => {
+    return apiResponse.map(item => ({
+        image: item.bidId?.carImage || '',
+        model: `${item.bidId?.carMaker || ''} ${item.bidId?.carName || ''}`.trim(),
+        price: `$${Number(item.bidId?.carMsrp || 0).toLocaleString()}.00`,
         customer: {
-            name: 'Cameron Groom',
-            email: 'camerogroom@gmail.com',
-            phone: '(+1) 555-0182',
-            creditScore: 0,
+            name: item.userId?.fullName || '',
+            email: item.userId?.email || '',
+            phone: '', // No phone in API, set blank or map if available
+            creditScore: item.userId?.creditScore ?? 0
         },
         location: '13th Street 47 ',
-        userOffer: '109,000.00',
-        msrp: '110,000.00',
-        comments: 'Testing system (elias) communicate with clients. We need a clean ',
+        userOffer: Number(item.bidId?.carBid || 0).toLocaleString(),
+        msrp: Number(item.bidId?.carMsrp || 0).toLocaleString(),
+        comments: item.bidId?.userComments || '',
         selectedOptions: 'Motorsport Stripe Decal on Top in Black',
-        status: 'Countered',
-    },
-    {
-        image: vehicleImage2,
-        model: 'Porsche Cayenne S Coupe',
-        price: '$108,000.00',
-        customer: {
-            name: 'Cameron Groom',
-            email: 'camerogroom@gmail.com',
-            phone: '(+1) 555-0182',
-            creditScore: 0,
-        },
-        location: '13th Street 47 ',
-        userOffer: '109,000.00',
-        msrp: '110,000.00',
-        comments: 'Testing system (elias) communicate with clients. We need a clean ',
-        selectedOptions: 'Motorsport Stripe Decal on Top in Black',
-        status: 'Countered',
-    },
-    {
-        image: vehicleImage3,
-        model: 'Porsche Cayenne S Coupe',
-        price: '$108,000.00',
-        customer: {
-            name: 'Cameron Groom',
-            email: 'camerogroom@gmail.com',
-            phone: '(+1) 555-0182',
-            creditScore: 0,
-        },
-        location: '13th Street 47 ',
-        userOffer: '109,000.00',
-        msrp: '110,000.00',
-        comments: 'Testing system (elias) communicate with clients. We need a clean ',
-        selectedOptions: 'Motorsport Stripe Decal on Top in Black',
-        status: 'Countered',
-    },
-    {
-        image: vehicleImage,
-        model: 'Porsche Cayenne S Coupe',
-        price: '$108,000.00',
-        customer: {
-            name: 'Cameron Groom',
-            email: 'camerogroom@gmail.com',
-            phone: '(+1) 555-0182',
-            creditScore: 0,
-        },
-        location: '13th Street 47 ',
-        userOffer: '109,000.00',
-        msrp: '110,000.00',
-        comments: 'Testing system (elias) communicate with clients. We need a clean ',
-        selectedOptions: 'Motorsport Stripe Decal on Top in Black',
-        status: 'Countered',
-    },
-    {
-        image: vehicleImage2,
-        model: 'Porsche Cayenne S Coupe',
-        price: '$108,000.00',
-        customer: {
-            name: 'Cameron Groom',
-            email: 'camerogroom@gmail.com',
-            phone: '(+1) 555-0182',
-            creditScore: 0,
-        },
-        location: '13th Street 47 ',
-        userOffer: '109,000.00',
-        msrp: '110,000.00',
-        comments: 'Testing system (elias) communicate with clients. We need a clean ',
-        selectedOptions: 'Motorsport Stripe Decal on Top in Black',
-        status: 'Countered',
-    },
-    {
-        image: vehicleImage3,
-        model: 'Porsche Cayenne S Coupe',
-        price: '$108,000.00',
-        customer: {
-            name: 'Cameron Groom',
-            email: 'camerogroom@gmail.com',
-            phone: '(+1) 555-0182',
-            creditScore: 0,
-        },
-        location: '13th Street 47 ',
-        userOffer: '109,000.00',
-        msrp: '110,000.00',
-        comments: 'Testing system (elias) communicate with clients. We need a clean ',
-        selectedOptions: 'Motorsport Stripe Decal on Top in Black',
-        status: 'Countered',
-    },
-    {
-        image: vehicleImage,
-        model: 'Porsche Cayenne S Coupe',
-        price: '$108,000.00',
-        customer: {
-            name: 'Cameron Groom',
-            email: 'camerogroom@gmail.com',
-            phone: '(+1) 555-0182',
-            creditScore: 0,
-        },
-        location: '13th Street 47 ',
-        userOffer: '109,000.00',
-        msrp: '110,000.00',
-        comments: 'Testing system (elias) communicate with clients. We need a clean ',
-        selectedOptions: 'Motorsport Stripe Decal on Top in Black',
-        status: 'Countered',
-    },
-    {
-        image: vehicleImage2,
-        model: 'Porsche Cayenne S Coupe',
-        price: '$108,000.00',
-        customer: {
-            name: 'Cameron Groom',
-            email: 'camerogroom@gmail.com',
-            phone: '(+1) 555-0182',
-            creditScore: 0,
-        },
-        location: '13th Street 47 ',
-        userOffer: '109,000.00',
-        msrp: '110,000.00',
-        comments: 'Testing system (elias) communicate with clients. We need a clean ',
-        selectedOptions: 'Motorsport Stripe Decal on Top in Black',
-        status: 'Countered',
-    },
-    {
-        image: vehicleImage3,
-        model: 'Porsche Cayenne S Coupe',
-        price: '$108,000.00',
-        customer: {
-            name: 'Cameron Groom',
-            email: 'camerogroom@gmail.com',
-            phone: '(+1) 555-0182',
-            creditScore: 0,
-        },
-        location: '13th Street 47 ',
-        userOffer: '109,000.00',
-        msrp: '110,000.00',
-        comments: 'Testing system (elias) communicate with clients. We need a clean ',
-        selectedOptions: 'Motorsport Stripe Decal on Top in Black',
-        status: 'Countered',
-    },
-]
+        status: 'Rejected'
+    }));
+}
+
+onMounted(() => {
+    getRejectedOffers()
+})
 
 </script>
 

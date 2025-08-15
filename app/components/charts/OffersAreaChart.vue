@@ -21,7 +21,18 @@
                 <img src="~/assets/images/icons/arrow-up-right.svg" alt="">
             </button>
         </div>
-        <client-only>
+        <!-- Loading State -->
+        <div v-if="isLoading" class="flex items-center justify-center h-[300px]">
+            <div class="text-gray-500">Loading chart data...</div>
+        </div>
+        
+        <!-- Error State -->
+        <div v-else-if="error" class="flex items-center justify-center h-[300px]">
+            <div class="text-red-500">{{ error }}</div>
+        </div>
+        
+        <!-- Chart -->
+        <client-only v-else>
             <apexchart width="100%" height="300" type="area" :options="chartOptions" :series="series"
                 class="rounded-2xl pt-2 pb-0" />
         </client-only>
@@ -29,7 +40,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
+
+// API integration
+const { apiGet } = useApi()
+const isLoading = ref(true)
+const error = ref(null)
 
 // Filter dropdown logic
 const filterOptions = ['This Week', 'Last Week', 'This Month']
@@ -37,9 +53,56 @@ const selectedFilter = ref('This Week')
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
 
+// Chart data from API
+const chartData = ref({
+    series: [{
+        name: "Offers",
+        data: [0, 0, 0, 0, 0, 0, 0]
+    }],
+    categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    yAxis: {
+        min: 0,
+        max: 4000
+    }
+})
+
+// Convert filter option to API parameter
+const getFilterParam = (filter) => {
+    const filterMap = {
+        'This Week': 'this-week',
+        'Last Week': 'last-week',
+        'This Month': 'this-month'
+    }
+    return filterMap[filter] || 'this-week'
+}
+
+// Fetch chart data from API
+const fetchChartData = async () => {
+    isLoading.value = true
+    error.value = null
+    
+    try {
+        const filterParam = getFilterParam(selectedFilter.value)
+        const response = await apiGet(`/stats/offers-chart?filter=${filterParam}`)
+        
+        if (response.success && response.data) {
+            chartData.value = response.data
+        }
+    } catch (err) {
+        console.error('Failed to fetch chart data:', err)
+        error.value = 'Failed to load chart data'
+    } finally {
+        isLoading.value = false
+    }
+}
+
+// Computed properties for chart
+const series = computed(() => chartData.value.series)
+
 function toggleDropdown() {
     dropdownOpen.value = !dropdownOpen.value
 }
+
 function selectFilter(option) {
     selectedFilter.value = option
     dropdownOpen.value = false
@@ -50,23 +113,23 @@ function handleClickOutside(e) {
         dropdownOpen.value = false
     }
 }
+
+// Watch for filter changes
+watch(selectedFilter, () => {
+    fetchChartData()
+})
+
 onMounted(() => {
     window.addEventListener('click', handleClickOutside)
+    fetchChartData() // Initial load
 })
+
 onBeforeUnmount(() => {
     window.removeEventListener('click', handleClickOutside)
 })
 
-// Mock data series
-const series = [
-    {
-        name: "Offers",
-        data: [1780, 1600, 2300, 1661, 3100, 3000, 3800],
-    },
-];
-
 // Main chart options (styled to match D3 example)
-const chartOptions = {
+const chartOptions = computed(() => ({
     chart: {
         toolbar: { show: false },
         zoom: { enabled: false },
@@ -122,10 +185,10 @@ const chartOptions = {
         padding: { left: 0, right: 0, top: 0, bottom: 0 },
     },
     xaxis: {
-        categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        categories: chartData.value.categories,
         labels: {
             style: {
-                colors: ["#94a3b8", "#94a3b8", "#94a3b8", "#94a3b8", "#94a3b8", "#94a3b8", "#94a3b8"],
+                colors: chartData.value.categories.map(() => "#94a3b8"),
                 fontSize: "13px",
                 fontWeight: 500,
             },
@@ -135,8 +198,8 @@ const chartOptions = {
         tooltip: { enabled: false },
     },
     yaxis: {
-        min: 500,
-        max: 4000,
+        min: chartData.value.yAxis.min,
+        max: chartData.value.yAxis.max || 100,
         tickAmount: 7,
         labels: {
             style: {
@@ -157,7 +220,7 @@ const chartOptions = {
         enabled: true,
         custom: ({ series, seriesIndex, dataPointIndex }) => {
             const val = series[seriesIndex][dataPointIndex];
-            const categories = chartOptions.xaxis.categories;
+            const categories = chartData.value.categories;
             const date = categories && categories[dataPointIndex] ? categories[dataPointIndex] : '';
             return `
         <div style="background:#2C73DB;color:#fff;padding:14px 16px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);min-width:180px;text-align:center;">
@@ -174,5 +237,5 @@ const chartOptions = {
         x: { show: false },
     },
     legend: { show: false },
-};
+}))
 </script>

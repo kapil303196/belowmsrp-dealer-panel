@@ -63,12 +63,37 @@
 <script setup>
 // Use our auth composable
 const { login } = useAuth()
+// Use our API composable
+const { apiPost } = useApi()
 
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
+const config = useRuntimeConfig()
+const apiBaseUrl = config.public.NUXT_PUBLIC_API_BASE_URL
 
-const handleLogin = () => {
+//log api url on mount
+onMounted(() => {
+  console.log('apiBaseUrl', apiBaseUrl)
+  console.log('config.public', config.public)
+  console.log('process.env.NUXT_PUBLIC_API_BASE_URL', process.env.NUXT_PUBLIC_API_BASE_URL)
+})
+
+const loginApi = async (email, password) => {
+    try {
+        const response = await apiPost('/auth/dealer-login', {
+            email: email,
+            password: password
+        })
+        console.log('response', response)
+        return response
+    } catch (error) {
+        console.error('Error during login:', error)
+        throw error
+    }
+}
+
+const handleLogin = async () => {
   // Clear any previous error message
   errorMessage.value = ''
   
@@ -77,12 +102,26 @@ const handleLogin = () => {
     return
   }
 
-  const success = login(email.value, password.value)
-  
-  if (success) {
+  try {
+    const response = await loginApi(email.value, password.value)
+    console.log('Login successful:', response)
+    
+    // Update the auth state
+    const { authenticated, user } = useAuth()
+    authenticated.value = true
+    user.value = response.data.data
+    console.log('user', response.data)
+    // Store in localStorage with the correct key
+    localStorage.setItem('auth', JSON.stringify({
+      authenticated: true,
+      user: response.data
+    }))
+    
+    // Navigate to index page
     navigateTo('/')
-  } else {
-    errorMessage.value = 'Invalid credentials. Try using admin@example.com / password'
+  } catch (error) {
+    console.error('Login failed:', error)
+    errorMessage.value = 'Invalid credentials. Please try again.'
   }
 }
 </script>

@@ -7,6 +7,11 @@ export default defineNuxtConfig({
     '@nuxtjs/tailwindcss'
   ],
   css: ['@/assets/css/tailwind.css'],
+  runtimeConfig: {
+    public: {
+      NUXT_PUBLIC_API_BASE_URL: process.env.NUXT_PUBLIC_API_BASE_URL
+    }
+  },
   app: {
     head: {
       link: [

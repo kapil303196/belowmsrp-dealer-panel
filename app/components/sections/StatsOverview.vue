@@ -3,7 +3,7 @@ F<template>
     <div class="flex items-center justify-between gap-10 max-sm:flex-col max-sm:items-start">
       <!-- Greeting Section -->
       <div class="max-sm:text-left">
-        <p class="large font-semibold">Hello Redcar Speed,</p>
+        <p class="large font-semibold">Hello {{ user.fullName }},</p>
         <h1 class="text-[#1E1E1E] opacity-55 font-medium">Welcome back</h1>
       </div>
       <!-- Stats Section -->
@@ -40,7 +40,7 @@ F<template>
   </section>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import arrowUpGreen from '~/assets/images/icons/arrow-up-green.svg';
 import arrowDownRed from '~/assets/images/icons/arrow-down-red.svg';
 import dropdownAngle from '~/assets/images/icons/droppdown-angle-stats.svg';
@@ -49,51 +49,36 @@ import vehicleLogo from '~/assets/images/icons/vehicle-logo.svg';
 import homeIcon from '~/assets/images/icons/home-icon-stats.svg';
 import statsHamburger from '~/assets/images/icons/stats-hamburger.svg';
 
+const { apiGet } = useApi()
+const { user } = useAuth()
+const stats = ref([])
+const getStats = async () => {
+  const response = await apiGet('/stats')
+  console.log('response', response.data)
+  stats.value = mapStatsData(response.data)
+  return response
+}
 
-const stats = [
-  {
-    title: 'Total Offers',
-    trendIcon: arrowUpGreen,
-    trend: '23%',
-    trendColor: 'text-[#71CA87]',
-    weekLabel: 'This week',
-    weekIcon: dropdownAngle,
-    buttonBg: 'bg-[#E5ECFF]',
-    buttonIcon: offersIcon,
-    value: '4,423',
-  },
-  {
-    title: 'Total Cars',
-    trendIcon: arrowDownRed,
-    trend: '23%',
-    trendColor: 'text-[#F9746D]',
-    weekLabel: 'This week',
-    weekIcon: dropdownAngle,
-    buttonBg: 'bg-[#DDF4DF]',
-    buttonIcon: vehicleLogo,
-    value: '1,050',
-  },
-  {
-    title: 'Total Makes',
-    trendIcon: arrowUpGreen,
-    trend: '23%',
-    trendColor: 'text-[#71CA87]',
-    weekLabel: 'This week',
-    weekIcon: dropdownAngle,
-    buttonBg: 'bg-[#F2DFE5]',
-    buttonIcon: homeIcon,
-    value: '204',
-  },
-  {
-    title: 'Total Cars',
-    trendIcon: arrowDownRed,
-    trend: '23%',
-    trendColor: 'text-[#F9746D]',
-    weekLabel: 'This week',
-    weekIcon: dropdownAngle,
-    buttonBg: 'bg-[#F6F0E2]',
-    buttonIcon: statsHamburger,
-    value: '86',
-  },
-];
+const mapStatsData = (apiData) => {
+  const iconMap = {
+    arrowUpGreen,
+    arrowDownRed,
+    dropdownAngle,
+    offersIcon,
+    vehicleLogo,
+    homeIcon,
+    statsHamburger
+  }
+  
+  return apiData.map(item => ({
+    ...item,
+    trendIcon: iconMap[item.trendIcon] || item.trendIcon,
+    weekIcon: iconMap[item.weekIcon] || item.weekIcon,
+    buttonIcon: iconMap[item.buttonIcon] || item.buttonIcon
+  }))
+}
+onMounted(() => {
+  getStats()
+})
+
 </script>

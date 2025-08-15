@@ -189,6 +189,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+const config = useRuntimeConfig()
 const filterOptions = ['This Week', 'Last Week', 'This Month']
 const selectedFilter = ref('This Week')
 const dropdownOpen = ref(null)
@@ -227,54 +228,98 @@ const tabs = [
 ];
 const activeTab = ref('All Offers');
 
-const allOffers = [
-    {
-        image: vehicleImage,
-        model: 'Porsche Cayenne S Coupe',
-        price: '$108,000.00',
+const allOffers = ref([])
+
+onMounted(() => {
+    getAllOffers('All Offers')
+})
+
+//on change of tab call api and convert data to our format
+watch(activeTab, () => {
+    getAllOffers(activeTab.value)
+})
+
+const { apiGet } = useApi()
+const getAllOffers = async (tab) => {
+    let response;
+    let dealerId = JSON.parse(localStorage.getItem('auth')).user._id;
+    switch (tab) {
+        case 'All Offers':
+            response = await apiGet('/bid/all-bid')
+            console.log('response', response.data)
+            allOffers.value = mapAllOffersApiData(response.data.slice(0, 10))
+            break;
+        case 'Accepted':
+            response = await apiGet(`/bid/get-dealer-bid/accept/${dealerId}`)
+            console.log('response', response.data)
+            allOffers.value = mapApiData(response.data.slice(0, 10))
+            break;
+        case 'Rejected':
+            response = await apiGet(`/bid/get-dealer-bid/reject/${dealerId}`)
+            console.log('response', response.data)
+            allOffers.value = mapApiData(response.data.slice(0, 10))
+            break;
+        case 'Countered':
+            response = await apiGet(`/bid/get-dealer-bid/counter/${dealerId}`)
+            console.log('response', response.data)
+            allOffers.value = mapApiData(response.data.slice(0, 10))
+            break;
+    }
+    console.log('allOffers converted', allOffers.value)
+}
+
+const mapApiData = (apiResponse) => {
+    return apiResponse.map(item => ({
+        image: item.bidId?.carImage || '',
+        model: `${item.bidId?.carMaker || ''} ${item.bidId?.carName || ''}`.trim(),
+        price: `$${Number(item.bidId?.carMsrp || 0).toLocaleString()}.00`,
         customer: {
-            name: 'Cameron Groom',
-            email: 'camerogroom@gmail.com',
-            phone: '(+1) 555-0182',
-            creditScore: 0,
+            name: item.userId?.fullName || '',
+            email: item.userId?.email || '',
+            phone: '', // No phone in API, set blank or map if available
+            creditScore: item.userId?.creditScore ?? 0
         },
-        userOffer: '109,000.00',
-        comments: 'Testing system (elias) communicate with clients. We need a clean',
-        status: 'Accepted',
-    },
-    {
-        image: vehicleImage,
-        model: 'Mercedes-Benz z class',
-        price: '$108,000.00',
+        userOffer: Number(item.bidId?.carBid || 0).toLocaleString(),
+        comments: item.bidId?.userComments || '',
+        status: mapDealerActionToStatus(item.dealerAction)
+    }));
+}
+
+const mapDealerActionToStatus = (dealerAction) => {
+    switch (dealerAction) {
+        case 'accept':
+            return 'Accepted';
+        case 'reject':
+            return 'Rejected';
+        case 'counter':
+            return 'Countered';
+        default:
+            return 'All Offers';
+    }
+}
+
+const mapAllOffersApiData = (apiResponse) => {
+    console.log('apiResponse', apiResponse)
+    return apiResponse.map(item => ({
+        image: item.carImage || '',
+        model: `${item.carMaker} ${item.carName}`,
+        price: `$${Number(item.carMsrp).toLocaleString()}.00`,
         customer: {
-            name: 'Cameron Groom',
-            email: 'camerogroom@gmail.com',
-            phone: '(+1) 555-0182',
-            creditScore: 0,
+            name: item.userName,
+            email: item.userEmail,
+            phone: '', // Backend doesn't provide phone in your example
+            creditScore: item.userId?.creditScore ?? 0
         },
-        userOffer: '109,000.00',
-        comments: 'Testing system (elias) communicate with clients. We need a clean',
-        status: 'Rejected',
-    },
-    {
-        image: vehicleImage,
-        model: 'Mercedes-Benz c class',
-        price: '$108,000.00',
-        customer: {
-            name: 'Cameron Groom',
-            email: 'camerogroom@gmail.com',
-            phone: '(+1) 555-0182',
-            creditScore: 0,
-        },
-        userOffer: '109,000.00',
-        comments: 'Testing system (elias) communicate with clients. We need a clean',
-        status: 'Countered',
-    },
-]
+        userOffer: Number(item.carBid).toLocaleString(),
+        comments: item.userComments || '',
+        status: item.status || '' // Add if status exists in backend or set a default
+    }));
+}
+
 
 const offers = computed(() => {
-    if (activeTab.value === 'All Offers') return allOffers;
-    return allOffers.filter(offer => offer.status === activeTab.value);
+    if (activeTab.value === 'All Offers') return allOffers.value;
+    return allOffers.value.filter(offer => offer.status === activeTab.value);
 });
 </script>
 
