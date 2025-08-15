@@ -2,10 +2,10 @@
     <div class="p-7 max-sm:p-5 max-sm:pt-0">
 
         <!-- Small screen filter bar -->
-        <ui-mobile-filter-bar title="All Offers" />
+        <ui-mobile-filter-bar title="All Offers" v-model:search="searchText" v-model:model="selectedModel" />
 
         <!-- Desktop filter bar -->
-        <UiDesktopFilterBar title="All Offers" />
+        <UiDesktopFilterBar title="All Offers" v-model:search="searchText" v-model:model="selectedModel" />
 
         <!-- Table: Desktop screens only -->
         <div class="overflow-auto max-md:hidden">
@@ -223,14 +223,27 @@ if (typeof window !== 'undefined') {
 const pageSize = 6
 const currentPage = ref(1)
 const allOffers = ref([])
+const searchText = ref('')
+const selectedModel = ref('')
 const acceptingIds = ref(new Set())
 const rejectingIds = ref(new Set())
 
-const totalPages = computed(() => Math.ceil(allOffers.value.length / pageSize))
+const filteredOffers = computed(() => {
+    const s = searchText.value.trim().toLowerCase()
+    const modelFilter = selectedModel.value.trim().toLowerCase()
+    return allOffers.value.filter(o => {
+        const matchesModel = !modelFilter || (o.brand || '').toLowerCase() === modelFilter
+        if (!matchesModel) return false
+        if (!s) return true
+        const hay = `${o.model} ${o.customer?.name || ''} ${o.customer?.email || ''} ${o.userOffer || ''} ${o.comments || ''}`.toLowerCase()
+        return hay.includes(s)
+    })
+})
+const totalPages = computed(() => Math.ceil(filteredOffers.value.length / pageSize))
 
 const paginatedOffers = computed(() => {
     const start = (currentPage.value - 1) * pageSize
-    return allOffers.value.slice(start, start + pageSize)
+    return filteredOffers.value.slice(start, start + pageSize)
 })
 
 function goToPage(page) {
@@ -257,6 +270,7 @@ const mapAllOffersApiData = (apiResponse) => {
     return apiResponse.map(item => ({
         image: item.carImage || '',
         model: `${item.carMaker} ${item.carName}`,
+        brand: item.carMaker || '',
         price: `$${Number(item.carMsrp).toLocaleString()}.00`,
         customer: {
             name: item.userName,

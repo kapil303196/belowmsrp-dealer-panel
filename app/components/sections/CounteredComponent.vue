@@ -2,10 +2,10 @@
 
     <div class="p-7 max-sm:px-5">
         <!-- Small screen filter bar -->
-        <ui-mobile-filter-bar title="Countered Offers" />
+        <ui-mobile-filter-bar title="Countered Offers" v-model:search="searchText" v-model:model="selectedModel" />
 
         <!-- Desktop filter bar -->
-        <UiDesktopFilterBar title="Countered Offers" />
+        <UiDesktopFilterBar title="Countered Offers" v-model:search="searchText" v-model:model="selectedModel" />
 
         <!-- Cards: Small screens only -->
         <div class="md:hidden flex flex-col gap-4">
@@ -163,12 +163,26 @@ if (typeof window !== 'undefined') {
 const pageSize = 10
 const currentPage = ref(1)
 const allOffers = ref([])
+const searchText = ref('')
+const selectedModel = ref('')
 
-const totalPages = computed(() => Math.ceil(allOffers.value.length / pageSize))
+const filteredOffers = computed(() => {
+    const s = searchText.value.trim().toLowerCase()
+    const modelFilter = selectedModel.value.trim().toLowerCase()
+    return allOffers.value.filter(o => {
+        const matchesModel = !modelFilter || (o.brand || '').toLowerCase() === modelFilter
+        if (!matchesModel) return false
+        if (!s) return true
+        const hay = `${o.model} ${o.customer?.name || ''} ${o.userOffer || ''} ${o.comments || ''} ${o.DealerComments || ''}`.toLowerCase()
+        return hay.includes(s)
+    })
+})
+
+const totalPages = computed(() => Math.ceil(filteredOffers.value.length / pageSize))
 
 const paginatedOffers = computed(() => {
     const start = (currentPage.value - 1) * pageSize
-    return allOffers.value.slice(start, start + pageSize)
+    return filteredOffers.value.slice(start, start + pageSize)
 })
 
 function goToPage(page) {
@@ -195,6 +209,7 @@ const mapApiData = (apiResponse) => {
     return apiResponse.map(item => ({
         image: item.bidId?.carImage || '',
         model: `${item.bidId?.carMaker || ''} ${item.bidId?.carName || ''}`.trim(),
+        brand: item.bidId?.carMaker || '',
         price: `$${Number(item.bidId?.carMsrp || 0).toLocaleString()}.00`,
         customer: {
             name: item.userId?.fullName ? `${item.userId.fullName.split(' ')[0]} ${item.userId.fullName.split(' ')[1]?.charAt(0) || ''}.` : '',

@@ -3,7 +3,7 @@
     <div class="flex items-center gap-[10px]">
       <h4 class="text-primary font-medium text-nowrap">{{ title }}</h4>
       <div class="relative">
-        <input type="search" class="bg-transparent p-3 pl-10 outline-none w-[340px] max-lg:w-[220px]"
+        <input v-model="searchProxy" type="search" class="bg-transparent p-3 pl-10 outline-none w-[340px] max-lg:w-[220px]"
           placeholder="Search by name, model, or amount...">
         <img class="absolute left-2 top-1/2 -translate-y-1/2"
           src="../../assets/images/icons/search-icon.svg" alt="icon">
@@ -35,9 +35,10 @@
         <div v-if="dropdownOpen === 'model'"
           class="absolute right-0 mt-2 w-40 bg-[#F7FAFF] border rounded-lg shadow-lg z-10">
           <ul>
-            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">Porsche</li>
-            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">Mercedes</li>
-            <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">BMW</li>
+            <li @click="selectModel('Porsche')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer">Porsche</li>
+            <li @click="selectModel('Mercedes')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer">Mercedes</li>
+            <li @click="selectModel('BMW')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer">BMW</li>
+            <li @click="selectModel('')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer">All Models</li>
           </ul>
         </div>
       </div>
@@ -61,15 +62,27 @@
 </template>
 
 <script setup>
-import { defineProps, ref, onMounted, onBeforeUnmount } from 'vue'
+import { defineProps, defineEmits, ref, onMounted, onBeforeUnmount, computed } from 'vue'
 const props = defineProps({
-  title: { type: String, required: true }
+  title: { type: String, required: true },
+  search: { type: String, default: '' },
+  model: { type: String, default: '' }
+})
+const emit = defineEmits(['update:search', 'update:model'])
+const searchProxy = computed({
+  get: () => props.search,
+  set: (val) => emit('update:search', val)
 })
 
 const dropdownOpen = ref(null)
 const filterBarRef = ref(null)
 function toggleDropdown(type) {
   dropdownOpen.value = dropdownOpen.value === type ? null : type
+}
+
+function selectModel(val) {
+  emit('update:model', val)
+  dropdownOpen.value = null
 }
 
 let clickHandler = null

@@ -1,10 +1,10 @@
 <template>
     <div class="p-7 max-sm:px-5">
         <!-- Small screen filter bar -->
-        <ui-mobile-filter-bar title="Accepted Offers" />
+        <ui-mobile-filter-bar title="Accepted Offers" v-model:search="searchText" v-model:model="selectedModel" />
 
         <!-- Desktop filter bar -->
-        <UiDesktopFilterBar title="Accepted Offers" />
+        <UiDesktopFilterBar title="Accepted Offers" v-model:search="searchText" v-model:model="selectedModel" />
 
         <!-- Cards: Small screens only -->
         <div class="md:hidden flex flex-col gap-4">
@@ -206,6 +206,7 @@ const mapApiData = (apiResponse) => {
     return apiResponse.map(item => ({
         image: item.bidId?.carImage || '',
         model: `${item.bidId?.carMaker || ''} ${item.bidId?.carName || ''}`.trim(),
+        brand: item.bidId?.carMaker || '',
         price: `$${Number(item.bidId?.carMsrp || 0).toLocaleString()}.00`,
         customer: {
             name: item.userId?.fullName || '',

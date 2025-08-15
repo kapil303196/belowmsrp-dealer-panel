@@ -14,6 +14,7 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
+      title: 'Below MSRP Dealer Panel',
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/images/icons/favicon.svg' },
         { rel: 'icon', type: 'image/png', href: '/favicon.ico', sizes: '32x32' },

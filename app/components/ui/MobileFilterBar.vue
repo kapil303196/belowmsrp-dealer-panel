@@ -34,7 +34,7 @@
             </div>
         </div>
         <div class="relative mt-1">
-            <input type="search" class="bg-[#E8EEF9] p-3 pl-10 outline-none w-full rounded-full border"
+            <input v-model="searchProxy" type="search" class="bg-[#E8EEF9] p-3 pl-10 outline-none w-full rounded-full border"
                 placeholder="Search by name, model, or amount...">
             <img class="absolute left-4 top-1/2 -translate-y-1/2" src="../../assets/images/icons/search-icon.svg"
                 alt="icon">
@@ -45,9 +45,16 @@
 
 
 <script setup>
-import { defineProps, ref, onMounted, onBeforeUnmount } from 'vue'
+import { defineProps, defineEmits, ref, onMounted, onBeforeUnmount, computed } from 'vue'
 const props = defineProps({
-    title: { type: String, required: true }
+    title: { type: String, required: true },
+    search: { type: String, default: '' },
+    model: { type: String, default: '' }
+})
+const emit = defineEmits(['update:search', 'update:model'])
+const searchProxy = computed({
+    get: () => props.search,
+    set: (val) => emit('update:search', val)
 })
 
 const dropdownOpen = ref(null)
