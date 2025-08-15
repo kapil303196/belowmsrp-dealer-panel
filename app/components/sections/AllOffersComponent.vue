@@ -96,13 +96,21 @@
                         <td class="px-[14px] py-2 text-sm">{{ offer.selectedOptions }}</td>
                         <td class="px-[14px] py-2 rounded-r-[10px]">
                             <div class="flex items-center gap-1">
-                                <button
-                                    class="relative w-[38px] h-10 border border-[#2C8436] rounded-lg flex items-center justify-center flex-none ">
-                                    <img src="../../assets/images/icons/green-check.svg" alt="icon" class="w-5 h-5">
+                                <button @click="acceptBid(offer)" :disabled="isAccepting(offer) || isRejecting(offer)"
+                                    class="relative w-[38px] h-10 border border-[#2C8436] rounded-lg flex items-center justify-center flex-none disabled:opacity-50 disabled:cursor-not-allowed ">
+                                    <svg v-if="isAccepting(offer)" class="animate-spin h-5 w-5 text-[#2C8436]" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                    <img v-else src="../../assets/images/icons/green-check.svg" alt="icon" class="w-5 h-5">
                                 </button>
-                                <button
-                                    class="relative w-[38px] h-10 border border-[#D53660] rounded-lg flex items-center justify-center flex-none ">
-                                    <img src="../../assets/images/icons/cross-icon.svg" alt="icon" class="w-5 h-5">
+                                <button @click="rejectBid(offer)" :disabled="isAccepting(offer) || isRejecting(offer)"
+                                    class="relative w-[38px] h-10 border border-[#D53660] rounded-lg flex items-center justify-center flex-none disabled:opacity-50 disabled:cursor-not-allowed ">
+                                    <svg v-if="isRejecting(offer)" class="animate-spin h-5 w-5 text-[#D53660]" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                    <img v-else src="../../assets/images/icons/cross-icon.svg" alt="icon" class="w-5 h-5">
                                 </button>
                                 <button
                                     class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none ">
@@ -167,11 +175,19 @@
                 </div>
                 <!-- Action buttons at bottom -->
                 <div class="flex items-center gap-2 center mt-[14px]">
-                    <button class="w-full h-10 border border-[#2C8436] rounded-lg flex items-center justify-center ">
-                        <img src="../../assets/images/icons/green-check.svg" alt="icon" class="w-5 h-5">
+                    <button @click="acceptBid(offer)" :disabled="isAccepting(offer) || isRejecting(offer)" class="w-full h-10 border border-[#2C8436] rounded-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed ">
+                        <svg v-if="isAccepting(offer)" class="animate-spin h-5 w-5 text-[#2C8436]" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                        <img v-else src="../../assets/images/icons/green-check.svg" alt="icon" class="w-5 h-5">
                     </button>
-                    <button class="w-full h-10 border border-[#D53660] rounded-lg flex items-center justify-center ">
-                        <img src="../../assets/images/icons/cross-icon.svg" alt="icon" class="w-5 h-5">
+                    <button @click="rejectBid(offer)" :disabled="isAccepting(offer) || isRejecting(offer)" class="w-full h-10 border border-[#D53660] rounded-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed ">
+                        <svg v-if="isRejecting(offer)" class="animate-spin h-5 w-5 text-[#D53660]" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                        <img v-else src="../../assets/images/icons/cross-icon.svg" alt="icon" class="w-5 h-5">
                     </button>
                     <button class="w-full h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center ">
                         <img src="../../assets/images/icons/equal-icon.svg" alt="icon" class="w-5 h-5">
@@ -207,6 +223,8 @@ if (typeof window !== 'undefined') {
 const pageSize = 6
 const currentPage = ref(1)
 const allOffers = ref([])
+const acceptingIds = ref(new Set())
+const rejectingIds = ref(new Set())
 
 const totalPages = computed(() => Math.ceil(allOffers.value.length / pageSize))
 
@@ -222,7 +240,7 @@ function goToPage(page) {
 }
 
 // API call to get all offers
-const { apiGet } = useApi()
+const { apiGet, apiPost } = useApi()
 
 const getAllOffers = async () => {
     try {
@@ -246,6 +264,10 @@ const mapAllOffersApiData = (apiResponse) => {
             phone: '', // Backend doesn't provide phone in your example
             creditScore: item.userId?.creditScore ?? 0
         },
+        userId: item.userId?._id || item.userId || '',
+        dealerId: JSON.parse(localStorage.getItem('auth') || '{}')?.user?._id || '',
+        carId: item.carId || item._id || '',
+        bidId: item.bidId || item._id || '',
         location: '13th Street 47', // Add if available in backend
         userOffer: Number(item.carBid).toLocaleString(),
         msrp: Number(item.carMsrp).toLocaleString(),
@@ -254,6 +276,47 @@ const mapAllOffersApiData = (apiResponse) => {
         status: item.status || 'All Offers' // Add if status exists in backend or set a default
     }));
 }
+
+const acceptBid = async (offer) => {
+    try {
+        acceptingIds.value.add(offer.bidId)
+        const payload = {
+            userId: offer.userId,
+            dealerId: offer.dealerId,
+            carId: offer.carId._id,
+            bidId: offer.bidId,
+            dealerAction: 'accept'
+        }
+        await apiPost('/bid/dealer-bid-action', payload)
+        await getAllOffers()
+    } catch (error) {
+        console.error('Error accepting bid:', error)
+    } finally {
+        acceptingIds.value.delete(offer.bidId)
+    }
+}
+
+const rejectBid = async (offer) => {
+    try {
+        rejectingIds.value.add(offer.bidId)
+        const payload = {
+            userId: offer.userId,
+            dealerId: offer.dealerId,
+            carId: offer.carId._id,
+            bidId: offer.bidId,
+            dealerAction: 'reject'
+        }
+        await apiPost('/bid/dealer-bid-action', payload)
+        await getAllOffers()
+    } catch (error) {
+        console.error('Error rejecting bid:', error)
+    } finally {
+        rejectingIds.value.delete(offer.bidId)
+    }
+}
+
+const isAccepting = (offer) => acceptingIds.value.has(offer.bidId)
+const isRejecting = (offer) => rejectingIds.value.has(offer.bidId)
 
 onMounted(() => {
     getAllOffers()
