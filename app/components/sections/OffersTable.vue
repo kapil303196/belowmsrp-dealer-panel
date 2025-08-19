@@ -255,22 +255,22 @@ const getAllOffers = async (tab) => {
         case 'All Offers':
             response = await apiGet('/bid/all-bid')
             console.log('response', response.data)
-            allOffers.value = mapAllOffersApiData(response.data.slice(0, 10))
+            allOffers.value = mapAllOffersApiData(response.data.slice(0, 100))
             break;
         case 'Accepted':
             response = await apiGet(`/bid/get-dealer-bid/accept/${dealerId}`)
             console.log('response', response.data)
-            allOffers.value = mapApiData(response.data.slice(0, 10))
+            allOffers.value = mapApiData(response.data.slice(0, 100))
             break;
         case 'Rejected':
             response = await apiGet(`/bid/get-dealer-bid/reject/${dealerId}`)
             console.log('response', response.data)
-            allOffers.value = mapApiData(response.data.slice(0, 10))
+            allOffers.value = mapApiData(response.data.slice(0, 100))
             break;
         case 'Countered':
             response = await apiGet(`/bid/get-dealer-bid/counter/${dealerId}`)
             console.log('response', response.data)
-            allOffers.value = mapApiData(response.data.slice(0, 10))
+            allOffers.value = mapApiData(response.data.slice(0, 100))
             break;
     }
     console.log('allOffers converted', allOffers.value)
