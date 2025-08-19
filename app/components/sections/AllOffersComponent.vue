@@ -230,7 +230,11 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-primary mb-1">File *</label>
-                            <input @change="onFileChange" type="file" required accept="image/*,application/pdf" class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-primary file:text-white" />
+                            <div class="w-full h-12 rounded-lg border border-[#DBE4F2] flex items-center px-2">
+                                <button type="button" @click="fileInput && fileInput.click()" class="px-4 py-2 rounded-md bg-secondary text-white text-sm h-9">Choose File</button>
+                                <span class="ml-3 text-primary/80 truncate">{{ fileName || 'No file chosen' }}</span>
+                            </div>
+                            <input ref="fileInputRef" @change="onFileChange" type="file" required accept="image/*,application/pdf" class="hidden" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-primary mb-1">Comments</label>
@@ -395,6 +399,9 @@ const showCounter = ref(false)
 const isSubmitting = ref(false)
 const currentOffer = ref(null)
 const form = ref({ counterBid: '', dealerComments: '', file: null })
+const fileName = ref('')
+const fileInputRef = ref(null)
+const fileInput = computed(() => fileInputRef.value)
 
 function openCounterModal(offer) {
     currentOffer.value = offer
@@ -408,6 +415,7 @@ function closeCounter() {
 function onFileChange(e) {
     const files = e.target.files
     form.value.file = files && files.length ? files[0] : null
+    fileName.value = form.value.file ? form.value.file.name : ''
 }
 
 const submitCounter = async () => {
