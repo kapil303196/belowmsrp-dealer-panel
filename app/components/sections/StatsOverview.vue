@@ -23,8 +23,8 @@
                   <span class="font-bold text-[13px]" :class="stat.trendColor">{{ stat.trend }}</span>
                 </div>
                 <div class="flex gap-[7px]">
-                  <span class="font-bold text-[#8F95B2] text-[13px]">{{ stat.weekLabel }}</span>
-                  <img :src="stat.weekIcon" alt="icon" />
+                  <span class="font-bold text-[#8F95B2] text-[13px]">Lifetime</span>
+                  <!-- <img :src="stat.weekIcon" alt="icon" /> -->
                 </div>
               </div>
               <button class="min-w-[54px] min-h-[54px] rounded-full flex items-center justify-center max-sm:hidden" :class="stat.buttonBg">
@@ -54,7 +54,7 @@ const { user } = useAuth()
 const displayName = computed(() => user.value?.fullName || user.value?.name || user.value?.email || 'Dealer')
 const stats = ref([])
 const getStats = async () => {
-  const response = await apiGet('/stats')
+  const response = await apiGet('/stats?filter=lifetime')
   console.log('response', response.data)
   stats.value = mapStatsData(response.data)
   return response

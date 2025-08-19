@@ -330,6 +330,7 @@ const getAllOffers = async () => {
 const mapAllOffersApiData = (apiResponse) => {
     console.log('apiResponse', apiResponse)
     return apiResponse.map(item => ({
+        bidId: item._id || item.bidId,
         image: item.carImage || '',
         model: `${item.carMaker} ${item.carName}`,
         brand: item.carMaker || '',
@@ -342,8 +343,7 @@ const mapAllOffersApiData = (apiResponse) => {
         },
         userId: item.userId?._id || item.userId || '',
         dealerId: JSON.parse(localStorage.getItem('auth') || '{}')?.user?._id || '',
-        carId: item.carId || item._id || '',
-        bidId: item.bidId || item._id || '',
+        carId: item.carId?._id || item.carId || '',
         location: '13th Street 47', // Add if available in backend
         userOffer: Number(item.carBid).toLocaleString(),
         msrp: Number(item.carMsrp).toLocaleString(),

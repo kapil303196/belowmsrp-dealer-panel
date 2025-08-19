@@ -37,6 +37,21 @@ export const useApi = () => {
     }
   }
 
+  // GET that returns a Blob (e.g., PDF download)
+  const apiGetBlob = async (endpoint) => {
+    try {
+      const response = await $fetch(`${apiBaseUrl}${endpoint}`, {
+        method: 'GET',
+        headers: getAuthHeaders({ omitContentType: true }),
+        responseType: 'blob'
+      })
+      return response
+    } catch (error) {
+      console.error('API GET (blob) Error:', error)
+      throw error
+    }
+  }
+
   const apiPost = async (endpoint, data) => {
     try {
       const response = await $fetch(`${apiBaseUrl}${endpoint}`, {
@@ -99,6 +114,7 @@ export const useApi = () => {
     apiPut,
     apiDelete,
     getAuthHeaders,
-    apiPostForm
+    apiPostForm,
+    apiGetBlob
   }
 } 

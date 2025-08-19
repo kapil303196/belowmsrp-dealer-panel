@@ -120,8 +120,12 @@
                         <td class="px-[14px] py-2 text-sm font-medium">${{ offer.userOffer }}</td>
                         <td class="px-[14px] py-2 text-sm">{{ offer.comments }}</td>
                         <td class="px-[14px] py-2 rounded-r-[10px]">
-                            <button>
-                                <img src="../../assets/images/icons/download-icon.svg" alt="icon">
+                            <button @click="downloadPdf(offer)" class="relative">
+                                <svg v-if="isDownloading(offer)" class="animate-spin h-5 w-5 text-primary" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                </svg>
+                                <img v-else src="../../assets/images/icons/download-icon.svg" alt="icon">
                             </button>
                         </td>
                     </tr>
@@ -141,8 +145,12 @@
                             <div class="text-[13px] font-medium text-primary opacity-50">{{ offer.price }}</div>
                         </div>
                     </div>
-                    <button class="ml-auto flex-shrink-0">
-                        <img src="../../assets/images/icons/download-icon.svg" alt="icon">
+                    <button class="ml-auto flex-shrink-0" @click="downloadPdf(offer)">
+                        <svg v-if="isDownloading(offer)" class="animate-spin h-5 w-5 text-primary" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                        <img v-else src="../../assets/images/icons/download-icon.svg" alt="icon">
                     </button>
                 </div>
                 <!-- Customer details -->
@@ -239,7 +247,7 @@ watch(activeTab, () => {
     getAllOffers(activeTab.value)
 })
 
-const { apiGet } = useApi()
+const { apiGet, apiGetBlob } = useApi()
 const getAllOffers = async (tab) => {
     let response;
     let dealerId = JSON.parse(localStorage.getItem('auth')).user._id;
@@ -270,6 +278,7 @@ const getAllOffers = async (tab) => {
 
 const mapApiData = (apiResponse) => {
     return apiResponse.map(item => ({
+        bidId: item.bidId?._id || item.bidId || item._id,
         image: item.bidId?.carImage || '',
         model: `${item.bidId?.carMaker || ''} ${item.bidId?.carName || ''}`.trim(),
         price: `$${Number(item.bidId?.carMsrp || 0).toLocaleString()}.00`,
@@ -301,6 +310,7 @@ const mapDealerActionToStatus = (dealerAction) => {
 const mapAllOffersApiData = (apiResponse) => {
     console.log('apiResponse', apiResponse)
     return apiResponse.map(item => ({
+        bidId: item._id,
         image: item.carImage || '',
         model: `${item.carMaker} ${item.carName}`,
         price: `$${Number(item.carMsrp).toLocaleString()}.00`,
@@ -321,6 +331,32 @@ const offers = computed(() => {
     if (activeTab.value === 'All Offers') return allOffers.value;
     return allOffers.value.filter(offer => offer.status === activeTab.value);
 });
+
+// PDF download
+const downloadingIds = ref(new Set())
+const isDownloading = (offer) => downloadingIds.value.has(offer.bidId)
+const downloadPdf = async (offer) => {
+    try {
+        const bidId = offer.bidId
+        if (!bidId) return
+        downloadingIds.value.add(bidId)
+        // GET blob
+        const blob = await apiGetBlob(`/bid/user-bid/${bidId}/pdf`)
+        const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }))
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `bid-${bidId}.pdf`
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+    } catch (e) {
+        console.error('Failed to download PDF', e)
+    } finally {
+        const bidId = offer.bidId || offer._id
+        downloadingIds.value.delete(bidId)
+    }
+}
 </script>
 
 <style scoped>
