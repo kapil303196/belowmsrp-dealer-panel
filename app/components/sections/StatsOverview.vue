@@ -1,9 +1,9 @@
-F<template>
+<template>
   <section class="py-16 px-8 max-sm:px-5 max-sm:py-6">
     <div class="flex items-center justify-between gap-10 max-sm:flex-col max-sm:items-start">
       <!-- Greeting Section -->
       <div class="max-sm:text-left">
-        <p class="large font-semibold">Hello {{ user.fullName }},</p>
+        <p class="large font-semibold">Hello {{ displayName }},</p>
         <h1 class="text-[#1E1E1E] opacity-55 font-medium">Welcome back</h1>
       </div>
       <!-- Stats Section -->
@@ -51,6 +51,7 @@ import statsHamburger from '~/assets/images/icons/stats-hamburger.svg';
 
 const { apiGet } = useApi()
 const { user } = useAuth()
+const displayName = computed(() => user.value?.fullName || user.value?.name || user.value?.email || 'Dealer')
 const stats = ref([])
 const getStats = async () => {
   const response = await apiGet('/stats')
