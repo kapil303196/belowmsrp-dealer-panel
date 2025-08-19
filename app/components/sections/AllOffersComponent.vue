@@ -126,7 +126,7 @@
                                     </svg>
                                     <img v-else src="../../assets/images/icons/cross-icon.svg" alt="icon" class="w-5 h-5">
                                 </button>
-                                <button
+                                <button @click="openCounterModal(offer)"
                                     class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none ">
                                     <img src="../../assets/images/icons/equal-icon.svg" alt="icon" class="w-5 h-5">
                                 </button>
@@ -203,7 +203,7 @@
                         </svg>
                         <img v-else src="../../assets/images/icons/cross-icon.svg" alt="icon" class="w-5 h-5">
                     </button>
-                    <button class="w-full h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center ">
+                    <button @click="openCounterModal(offer)" class="w-full h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center ">
                         <img src="../../assets/images/icons/equal-icon.svg" alt="icon" class="w-5 h-5">
                     </button>
                 </div>
@@ -213,6 +213,45 @@
         <!-- Pagination Controls -->
         <UiPaginationBar :currentPage="currentPage" :totalPages="totalPages" :totalEntries="allOffers.length"
             @goToPage="goToPage" />
+
+        <!-- Counter Modal -->
+        <div v-if="showCounter" class="fixed inset-0 z-[100] flex items-center justify-center">
+            <div class="absolute inset-0 bg-black/30" @click="closeCounter"></div>
+            <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-xl mx-4 p-6">
+                <div class="flex items-start justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-primary">Counter User Bid</h3>
+                    <button class="text-primary/60 hover:text-primary" @click="closeCounter">✕</button>
+                </div>
+                <form @submit.prevent="submitCounter">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-primary mb-1">Counter Bid *</label>
+                            <input v-model="form.counterBid" type="number" min="0" required placeholder="Enter Counter bid" class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-primary mb-1">File *</label>
+                            <input @change="onFileChange" type="file" required accept="image/*,application/pdf" class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-primary file:text-white" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-primary mb-1">Comments</label>
+                            <textarea v-model="form.dealerComments" rows="4" placeholder="Enter Your Comments here" class="w-full px-3 py-2 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end">
+                        <ui-base-button :disabled="isSubmitting" variant="secondary">
+                            <span v-if="isSubmitting" class="inline-flex items-center">
+                                <svg class="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                </svg>
+                                Submitting...
+                            </span>
+                            <span v-else>Submit</span>
+                        </ui-base-button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -269,7 +308,7 @@ function goToPage(page) {
 }
 
 // API call to get all offers
-const { apiGet, apiPost } = useApi()
+const { apiGet, apiPost, apiPostForm } = useApi()
 
 const getAllOffers = async () => {
     try {
@@ -350,6 +389,68 @@ const rejectBid = async (offer) => {
 
 const isAccepting = (offer) => acceptingIds.value.has(offer.bidId)
 const isRejecting = (offer) => rejectingIds.value.has(offer.bidId)
+
+// Counter modal state
+const showCounter = ref(false)
+const isSubmitting = ref(false)
+const currentOffer = ref(null)
+const form = ref({ counterBid: '', dealerComments: '', file: null })
+
+function openCounterModal(offer) {
+    currentOffer.value = offer
+    form.value = { counterBid: '', dealerComments: '', file: null }
+    showCounter.value = true
+}
+function closeCounter() {
+    if (isSubmitting.value) return
+    showCounter.value = false
+}
+function onFileChange(e) {
+    const files = e.target.files
+    form.value.file = files && files.length ? files[0] : null
+}
+
+const submitCounter = async () => {
+    if (!currentOffer.value) return
+    try {
+        isSubmitting.value = true
+        const auth = JSON.parse(localStorage.getItem('auth') || '{}')
+        const userId = currentOffer.value.userId
+        const dealerId = currentOffer.value.dealerId
+        const carIdRaw = currentOffer.value.carId
+        const carId = typeof carIdRaw === 'object' && carIdRaw?._id ? carIdRaw._id : carIdRaw
+        const bidIdRaw = currentOffer.value.bidId
+        const bidId = typeof bidIdRaw === 'object' && bidIdRaw?._id ? bidIdRaw._id : bidIdRaw
+        const dealerEmail = auth?.user?.email || ''
+        const dealerName = auth?.user?.name || auth?.user?.fullName || 'Dealer'
+        const userDetails = auth?.user ? JSON.stringify(auth.user) : '{}'
+
+        const fd = new FormData()
+        fd.append('userId', userId)
+        fd.append('userEmail', currentOffer.value.customer?.email || '')
+        fd.append('dealerId', dealerId)
+        fd.append('dealerName', dealerName)
+        fd.append('dealerEmail', dealerEmail)
+        fd.append('carId', carId)
+        fd.append('bidId', bidId)
+        fd.append('dealerAction', 'counter')
+        fd.append('counterBid', String(form.value.counterBid || ''))
+        fd.append('dealerComments', form.value.dealerComments || '')
+        fd.append('userDetails', userDetails)
+        fd.append('options', '[]')
+        if (form.value.file) {
+            fd.append('file0', form.value.file)
+        }
+
+        await apiPostForm('/bid/dealer-bid-counter', fd)
+        await getAllOffers()
+        showCounter.value = false
+    } catch (error) {
+        console.error('Error submitting counter bid:', error)
+    } finally {
+        isSubmitting.value = false
+    }
+}
 
 onMounted(() => {
     getAllOffers()

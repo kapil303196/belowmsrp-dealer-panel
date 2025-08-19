@@ -2,26 +2,26 @@ export const useApi = () => {
   const config = useRuntimeConfig()
   const apiBaseUrl = config.public.NUXT_PUBLIC_API_BASE_URL
 
-  const getAuthHeaders = () => {
+  const getAuthHeaders = (options = {}) => {
+    const { omitContentType = false } = options
+    let headers = {}
     if (process.client) {
       const auth = localStorage.getItem('auth')
       if (auth) {
         try {
           const authData = JSON.parse(auth)
           if (authData.user && authData.user.token) {
-            return {
-              'authtoken': `${authData.user.token}`,
-              'Content-Type': 'application/json'
-            }
+            headers['authtoken'] = `${authData.user.token}`
           }
         } catch (e) {
           console.error('Failed to parse auth data', e)
         }
       }
     }
-    return {
-      'Content-Type': 'application/json'
+    if (!omitContentType) {
+      headers['Content-Type'] = 'application/json'
     }
+    return headers
   }
 
   const apiGet = async (endpoint) => {
@@ -47,6 +47,21 @@ export const useApi = () => {
       return response
     } catch (error) {
       console.error('API POST Error:', error)
+      throw error
+    }
+  }
+
+  // For FormData/multipart requests. Avoid setting Content-Type so the browser sets the boundary.
+  const apiPostForm = async (endpoint, formData) => {
+    try {
+      const response = await $fetch(`${apiBaseUrl}${endpoint}`, {
+        method: 'POST',
+        headers: getAuthHeaders({ omitContentType: true }),
+        body: formData
+      })
+      return response
+    } catch (error) {
+      console.error('API POST (form) Error:', error)
       throw error
     }
   }
@@ -83,6 +98,7 @@ export const useApi = () => {
     apiPost,
     apiPut,
     apiDelete,
-    getAuthHeaders
+    getAuthHeaders,
+    apiPostForm
   }
 } 
