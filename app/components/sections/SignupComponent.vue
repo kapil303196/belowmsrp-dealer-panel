@@ -89,14 +89,21 @@
                         </div>
                     </div>
                     <div class="w-full flex justify-end">
-                        <ui-base-button type="submit" variant="secondary">
-                            Sign Up Now
+                        <ui-base-button :disabled="isSubmitting" type="submit" variant="secondary">
+                            <span v-if="isSubmitting" class="inline-flex items-center">
+                                <svg class="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                </svg>
+                                Submitting...
+                            </span>
+                            <span v-else>Sign Up Now</span>
                         </ui-base-button>
                     </div>
                 </form>
             </div>
             <p class="text-sm text-center mt-4">Already have account?
-                <a href="#" class="text-secondary font-medium">Log in</a>
+                <NuxtLink to="/login" class="text-secondary font-medium">Log in</NuxtLink>
             </p>
         </div>
 
@@ -132,7 +139,14 @@
 </template>
 
 <script setup>
-// Add form handling logic or validation here if needed
+const isSubmitting = ref(false)
+
+function fakeSubmit(e) {
+    e?.preventDefault?.()
+    if (isSubmitting.value) return
+    isSubmitting.value = true
+    setTimeout(() => { isSubmitting.value = false }, 1200)
+}
 </script>
 
 <style scoped>

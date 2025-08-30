@@ -40,15 +40,24 @@
                     </div>
 
                     <div class="w-full max-sm:w-fit max-sm:ml-auto max-sm:mr-0">
-                        <ui-base-button class="w-full justify-center flex items-center gap-3" type="submit" variant="secondary">
-                            Log In
-                            <img src="../../assets/images/icons/angle-right-white-login.svg" alt="icon">
+                        <ui-base-button :disabled="isSubmitting" class="w-full justify-center flex items-center gap-3" type="submit" variant="secondary">
+                            <span v-if="isSubmitting" class="inline-flex items-center">
+                                <svg class="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                </svg>
+                                Logging in...
+                            </span>
+                            <span v-else class="inline-flex items-center gap-3">
+                                Log In
+                                <img src="../../assets/images/icons/angle-right-white-login.svg" alt="icon">
+                            </span>
                         </ui-base-button>
                     </div>
                 </form>
             </div>
             <p class="text-sm text-center mt-10">Dont have an account?
-                <a href="#" class="text-secondary font-medium underline">Sign up now</a>
+                <NuxtLink to="/signup" class="text-secondary font-medium underline">Sign up now</NuxtLink>
             </p>
         </div>
 
@@ -69,6 +78,7 @@ const { apiPost } = useApi()
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
+const isSubmitting = ref(false)
 const config = useRuntimeConfig()
 const apiBaseUrl = config.public.NUXT_PUBLIC_API_BASE_URL
 
@@ -103,6 +113,7 @@ const handleLogin = async () => {
   }
 
   try {
+    isSubmitting.value = true
     const response = await loginApi(email.value, password.value)
     console.log('Login successful:', response)
     
@@ -122,6 +133,9 @@ const handleLogin = async () => {
   } catch (error) {
     console.error('Login failed:', error)
     errorMessage.value = 'Invalid credentials. Please try again.'
+  }
+  finally {
+    isSubmitting.value = false
   }
 }
 </script>

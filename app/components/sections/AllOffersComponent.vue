@@ -130,6 +130,13 @@
                                     class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none ">
                                     <img src="../../assets/images/icons/equal-icon.svg" alt="icon" class="w-5 h-5">
                                 </button>
+                                <button @click="downloadPdf(offer)" class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none ">
+                                    <svg v-if="isDownloading(offer)" class="animate-spin h-5 w-5 text-primary" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                    <img v-else src="../../assets/images/icons/download-icon.svg" alt="icon" class="w-5 h-5">
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -205,6 +212,13 @@
                     </button>
                     <button @click="openCounterModal(offer)" class="w-full h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center ">
                         <img src="../../assets/images/icons/equal-icon.svg" alt="icon" class="w-5 h-5">
+                    </button>
+                    <button @click="downloadPdf(offer)" class="w-full h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center ">
+                        <svg v-if="isDownloading(offer)" class="animate-spin h-5 w-5 text-primary" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                        <img v-else src="../../assets/images/icons/download-icon.svg" alt="icon" class="w-5 h-5">
                     </button>
                 </div>
             </div>
@@ -312,7 +326,7 @@ function goToPage(page) {
 }
 
 // API call to get all offers
-const { apiGet, apiPost, apiPostForm } = useApi()
+const { apiGet, apiPost, apiPostForm, apiGetBlob } = useApi()
 
 const getAllOffers = async () => {
     try {
@@ -393,6 +407,31 @@ const rejectBid = async (offer) => {
 
 const isAccepting = (offer) => acceptingIds.value.has(offer.bidId)
 const isRejecting = (offer) => rejectingIds.value.has(offer.bidId)
+
+// PDF download
+const downloadingIds = ref(new Set())
+const isDownloading = (offer) => downloadingIds.value.has(offer.bidId)
+const downloadPdf = async (offer) => {
+    try {
+        const bidId = offer.bidId
+        if (!bidId) return
+        downloadingIds.value.add(bidId)
+        const blob = await apiGetBlob(`/bid/user-bid/${bidId}/pdf`)
+        const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }))
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `bid-${bidId}.pdf`
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+    } catch (e) {
+        console.error('Failed to download PDF', e)
+    } finally {
+        const bidId = offer.bidId || offer._id
+        downloadingIds.value.delete(bidId)
+    }
+}
 
 // Counter modal state
 const showCounter = ref(false)

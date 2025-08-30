@@ -120,13 +120,35 @@
                         <td class="px-[14px] py-2 text-sm font-medium">${{ offer.userOffer }}</td>
                         <td class="px-[14px] py-2 text-sm">{{ offer.comments }}</td>
                         <td class="px-[14px] py-2 rounded-r-[10px]">
-                            <button @click="downloadPdf(offer)" class="relative">
-                                <svg v-if="isDownloading(offer)" class="animate-spin h-5 w-5 text-primary" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                                </svg>
-                                <img v-else src="../../assets/images/icons/download-icon.svg" alt="icon">
-                            </button>
+                            <div class="flex items-center gap-1">
+                                <button @click="acceptBid(offer)" :disabled="isAccepting(offer) || isRejecting(offer)"
+                                    class="relative w-[38px] h-10 border border-[#2C8436] rounded-lg flex items-center justify-center flex-none disabled:opacity-50 disabled:cursor-not-allowed ">
+                                    <svg v-if="isAccepting(offer)" class="animate-spin h-5 w-5 text-[#2C8436]" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                    <img v-else src="../../assets/images/icons/green-check.svg" alt="icon" class="w-5 h-5">
+                                </button>
+                                <button @click="rejectBid(offer)" :disabled="isAccepting(offer) || isRejecting(offer)"
+                                    class="relative w-[38px] h-10 border border-[#D53660] rounded-lg flex items-center justify-center flex-none disabled:opacity-50 disabled:cursor-not-allowed ">
+                                    <svg v-if="isRejecting(offer)" class="animate-spin h-5 w-5 text-[#D53660]" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                    <img v-else src="../../assets/images/icons/cross-icon.svg" alt="icon" class="w-5 h-5">
+                                </button>
+                                <button @click="openCounterModal(offer)"
+                                    class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none ">
+                                    <img src="../../assets/images/icons/equal-icon.svg" alt="icon" class="w-5 h-5">
+                                </button>
+                                <button @click="downloadPdf(offer)" class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none ">
+                                    <svg v-if="isDownloading(offer)" class="animate-spin h-5 w-5 text-primary" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                    <img v-else src="../../assets/images/icons/download-icon.svg" alt="icon" class="w-5 h-5">
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
@@ -145,12 +167,12 @@
                             <div class="text-[13px] font-medium text-primary opacity-50">{{ offer.price }}</div>
                         </div>
                     </div>
-                    <button class="ml-auto flex-shrink-0" @click="downloadPdf(offer)">
+                    <button class="ml-auto flex-shrink-0 w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center" @click="downloadPdf(offer)">
                         <svg v-if="isDownloading(offer)" class="animate-spin h-5 w-5 text-primary" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                         </svg>
-                        <img v-else src="../../assets/images/icons/download-icon.svg" alt="icon">
+                        <img v-else src="../../assets/images/icons/download-icon.svg" alt="icon" class="w-5 h-5">
                     </button>
                 </div>
                 <!-- Customer details -->
@@ -190,13 +212,75 @@
                 <!-- Comment -->
                 <div class="mt-[14px]"><span class="font-medium text-[15px] text-primary"></span> {{
                     offer.comments }}</div>
+                <!-- Action buttons at bottom -->
+                <div class="flex items-center gap-2 center mt-[14px]">
+                    <button @click="acceptBid(offer)" :disabled="isAccepting(offer) || isRejecting(offer)" class="w-full h-10 border border-[#2C8436] rounded-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed ">
+                        <svg v-if="isAccepting(offer)" class="animate-spin h-5 w-5 text-[#2C8436]" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                        <img v-else src="../../assets/images/icons/green-check.svg" alt="icon" class="w-5 h-5">
+                    </button>
+                    <button @click="rejectBid(offer)" :disabled="isAccepting(offer) || isRejecting(offer)" class="w-full h-10 border border-[#D53660] rounded-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed ">
+                        <svg v-if="isRejecting(offer)" class="animate-spin h-5 w-5 text-[#D53660]" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                        <img v-else src="../../assets/images/icons/cross-icon.svg" alt="icon" class="w-5 h-5">
+                    </button>
+                    <button @click="openCounterModal(offer)" class="w-full h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center ">
+                        <img src="../../assets/images/icons/equal-icon.svg" alt="icon" class="w-5 h-5">
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Counter Modal -->
+        <div v-if="showCounter" class="fixed inset-0 z-[100] flex items-center justify-center">
+            <div class="absolute inset-0 bg-black/30" @click="closeCounter"></div>
+            <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-xl mx-4 p-6">
+                <div class="flex items-start justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-primary">Counter User Bid</h3>
+                    <button class="text-primary/60 hover:text-primary" @click="closeCounter">✕</button>
+                </div>
+                <form @submit.prevent="submitCounter">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-primary mb-1">Counter Bid *</label>
+                            <input v-model="form.counterBid" type="number" min="0" required placeholder="Enter Counter bid" class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-primary mb-1">File *</label>
+                            <div class="w-full h-12 rounded-lg border border-[#DBE4F2] flex items-center px-2">
+                                <button type="button" @click="fileInput && fileInput.click()" class="px-4 py-2 rounded-md bg-secondary text-white text-sm h-9">Choose File</button>
+                                <span class="ml-3 text-primary/80 truncate">{{ fileName || 'No file chosen' }}</span>
+                            </div>
+                            <input ref="fileInputRef" @change="onFileChange" type="file" required accept="image/*,application/pdf" class="hidden" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-primary mb-1">Comments</label>
+                            <textarea v-model="form.dealerComments" rows="4" placeholder="Enter Your Comments here" class="w-full px-3 py-2 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end">
+                        <ui-base-button :disabled="isSubmitting" variant="secondary">
+                            <span v-if="isSubmitting" class="inline-flex items-center">
+                                <svg class="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                </svg>
+                                Submitting...
+                            </span>
+                            <span v-else>Submit</span>
+                        </ui-base-button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 const config = useRuntimeConfig()
 const filterOptions = ['This Week', 'Last Week', 'This Month']
 const selectedFilter = ref('This Week')
@@ -247,7 +331,7 @@ watch(activeTab, () => {
     getAllOffers(activeTab.value)
 })
 
-const { apiGet, apiGetBlob } = useApi()
+const { apiGet, apiGetBlob, apiPost, apiPostForm } = useApi()
 const getAllOffers = async (tab) => {
     let response;
     let dealerId = JSON.parse(localStorage.getItem('auth')).user._id;
@@ -285,12 +369,15 @@ const mapApiData = (apiResponse) => {
         customer: {
             name: item.userId?.fullName || '',
             email: item.userId?.email || '',
-            phone: '', // No phone in API, set blank or map if available
+            phone: '',
             creditScore: item.userId?.creditScore ?? 0
         },
         userOffer: Number(item.bidId?.carBid || 0).toLocaleString(),
         comments: item.bidId?.userComments || '',
-        status: mapDealerActionToStatus(item.dealerAction)
+        status: mapDealerActionToStatus(item.dealerAction),
+        userId: item.userId?._id || item.userId || '',
+        dealerId: JSON.parse(localStorage.getItem('auth') || '{}')?.user?._id || '',
+        carId: item.bidId?.carId?._id || item.bidId?.carId || item.carId || ''
     }));
 }
 
@@ -322,7 +409,10 @@ const mapAllOffersApiData = (apiResponse) => {
         },
         userOffer: Number(item.carBid).toLocaleString(),
         comments: item.userComments || '',
-        status: item.status || '' // Add if status exists in backend or set a default
+        status: item.status || '', // Add if status exists in backend or set a default
+        userId: item.userId?._id || item.userId || '',
+        dealerId: JSON.parse(localStorage.getItem('auth') || '{}')?.user?._id || '',
+        carId: item.carId?._id || item.carId || ''
     }));
 }
 
@@ -355,6 +445,120 @@ const downloadPdf = async (offer) => {
     } finally {
         const bidId = offer.bidId || offer._id
         downloadingIds.value.delete(bidId)
+    }
+}
+
+// Accept / Reject
+const acceptingIds = ref(new Set())
+const rejectingIds = ref(new Set())
+const isAccepting = (offer) => acceptingIds.value.has(offer.bidId)
+const isRejecting = (offer) => rejectingIds.value.has(offer.bidId)
+
+const acceptBid = async (offer) => {
+    try {
+        acceptingIds.value.add(offer.bidId)
+        const carIdRaw = offer.carId
+        const bidIdRaw = offer.bidId
+        const payload = {
+            userId: offer.userId,
+            dealerId: offer.dealerId,
+            carId: typeof carIdRaw === 'object' && carIdRaw?._id ? carIdRaw._id : carIdRaw,
+            bidId: typeof bidIdRaw === 'object' && bidIdRaw?._id ? bidIdRaw._id : bidIdRaw,
+            dealerAction: 'accept'
+        }
+        await apiPost('/bid/dealer-bid-action', payload)
+        await getAllOffers(activeTab.value)
+    } catch (error) {
+        console.error('Error accepting bid:', error)
+    } finally {
+        acceptingIds.value.delete(offer.bidId)
+    }
+}
+
+const rejectBid = async (offer) => {
+    try {
+        rejectingIds.value.add(offer.bidId)
+        const carIdRaw = offer.carId
+        const bidIdRaw = offer.bidId
+        const payload = {
+            userId: offer.userId,
+            dealerId: offer.dealerId,
+            carId: typeof carIdRaw === 'object' && carIdRaw?._id ? carIdRaw._id : carIdRaw,
+            bidId: typeof bidIdRaw === 'object' && bidIdRaw?._id ? bidIdRaw._id : bidIdRaw,
+            dealerAction: 'reject'
+        }
+        await apiPost('/bid/dealer-bid-action', payload)
+        await getAllOffers(activeTab.value)
+    } catch (error) {
+        console.error('Error rejecting bid:', error)
+    } finally {
+        rejectingIds.value.delete(offer.bidId)
+    }
+}
+
+// Counter modal state and submit
+const showCounter = ref(false)
+const isSubmitting = ref(false)
+const currentOffer = ref(null)
+const form = ref({ counterBid: '', dealerComments: '', file: null })
+const fileName = ref('')
+const fileInputRef = ref(null)
+const fileInput = computed(() => fileInputRef.value)
+
+function openCounterModal(offer) {
+    currentOffer.value = offer
+    form.value = { counterBid: '', dealerComments: '', file: null }
+    showCounter.value = true
+}
+function closeCounter() {
+    if (isSubmitting.value) return
+    showCounter.value = false
+}
+function onFileChange(e) {
+    const files = e.target.files
+    form.value.file = files && files.length ? files[0] : null
+    fileName.value = form.value.file ? form.value.file.name : ''
+}
+
+const submitCounter = async () => {
+    if (!currentOffer.value) return
+    try {
+        isSubmitting.value = true
+        const auth = JSON.parse(localStorage.getItem('auth') || '{}')
+        const userId = currentOffer.value.userId
+        const dealerId = currentOffer.value.dealerId
+        const carIdRaw = currentOffer.value.carId
+        const carId = typeof carIdRaw === 'object' && carIdRaw?._id ? carIdRaw._id : carIdRaw
+        const bidIdRaw = currentOffer.value.bidId
+        const bidId = typeof bidIdRaw === 'object' && bidIdRaw?._id ? bidIdRaw._id : bidIdRaw
+        const dealerEmail = auth?.user?.email || ''
+        const dealerName = auth?.user?.name || auth?.user?.fullName || 'Dealer'
+        const userDetails = auth?.user ? JSON.stringify(auth.user) : '{}'
+
+        const fd = new FormData()
+        fd.append('userId', userId)
+        fd.append('userEmail', currentOffer.value.customer?.email || '')
+        fd.append('dealerId', dealerId)
+        fd.append('dealerName', dealerName)
+        fd.append('dealerEmail', dealerEmail)
+        fd.append('carId', carId)
+        fd.append('bidId', bidId)
+        fd.append('dealerAction', 'counter')
+        fd.append('counterBid', String(form.value.counterBid || ''))
+        fd.append('dealerComments', form.value.dealerComments || '')
+        fd.append('userDetails', userDetails)
+        fd.append('options', '[]')
+        if (form.value.file) {
+            fd.append('file0', form.value.file)
+        }
+
+        await apiPostForm('/bid/dealer-bid-counter', fd)
+        await getAllOffers(activeTab.value)
+        showCounter.value = false
+    } catch (error) {
+        console.error('Error submitting counter bid:', error)
+    } finally {
+        isSubmitting.value = false
     }
 }
 </script>
