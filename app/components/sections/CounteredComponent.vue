@@ -59,9 +59,26 @@
                                 class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
                             <div class="flex justify-between border-none p-2">
                                 <span class="text-[#081735] opacity-55">Counter Offer:</span>
-                                <span class="font-semibold">${{ offer.counterOffer }}</span>
+                                <span class="font-semibold">
+                                    <div class="flex flex-col items-end">
+                                        <span class="text-xs text-gray-500 mb-1">
+                                            {{ offer.dealerAction === 'user-counter' ? 'User Counter' : 'Dealer Counter' }}
+                                        </span>
+                                        <span>${{ offer.counterOffer }}</span>
+                                    </div>
+                                </span>
                             </div>
                         </div>
+                    </div>
+                    
+                    <!-- Status Badge -->
+                    <div class="mt-2 mb-3">
+                        <span v-if="offer.dealerAction === 'user-counter'" class="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                            User Countered - Action Required
+                        </span>
+                        <span v-else-if="offer.dealerAction === 'counter'" class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                            Waiting for User Response
+                        </span>
                     </div>
                 </div>
                 <!-- Comments -->
@@ -71,6 +88,37 @@
                 </div>
                 <p class="font-medium text-primary opacity-55 mb-1 text-sm">Dealer Comments</p>
                 <div class="mb-3"><span class="font-medium text-[15px] text-primary"></span> {{ offer.DealerComments }}
+                </div>
+                
+                <!-- Mobile Actions -->
+                <div v-if="offer.dealerAction === 'user-counter' && offer.userAction !== 'Accepted' && offer.userAction !== 'accept' && offer.userAction !== 'rejected' && offer.userAction !== 'reject'" class="flex gap-2 mt-3">
+                    <button 
+                        @click="acceptUserCounter(offer)"
+                        class="flex-1 px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 action-btn"
+                    >
+                        Accept
+                    </button>
+                    <button 
+                        @click="rejectUserCounter(offer)"
+                        class="flex-1 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 action-btn"
+                    >
+                        Reject
+                    </button>
+                    <button 
+                        @click="counterUserBid(offer)"
+                        class="flex-1 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 action-btn"
+                    >
+                        Counter
+                    </button>
+                </div>
+                <div v-else-if="offer.dealerAction === 'user-counter' && (offer.userAction === 'Accepted' || offer.userAction === 'accept')" class="text-green-600 text-xs mt-3 text-center">
+                    <i class="fas fa-check-circle me-1"></i> Deal Closed
+                </div>
+                <div v-else-if="offer.dealerAction === 'user-counter' && (offer.userAction === 'rejected' || offer.userAction === 'reject')" class="text-red-600 text-xs mt-3 text-center">
+                    <i class="fas fa-times-circle me-1"></i> Deal Closed
+                </div>
+                <div v-else-if="offer.dealerAction === 'counter'" class="text-gray-500 text-xs mt-3 text-center">
+                    Waiting for user response
                 </div>
             </div>
         </div>
@@ -106,6 +154,9 @@
                             </button>
                         </th>
                         <th class="px-[14px] py-2 font-normal">
+                            Status
+                        </th>
+                        <th class="px-[14px] py-2 font-normal">
                             <button>
                                 User Comments
                                 <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg"
@@ -118,6 +169,9 @@
                                 <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg"
                                     alt="">
                             </button>
+                        </th>
+                        <th class="px-[14px] py-2 font-normal">
+                            Actions
                         </th>
                     </tr>
                 </thead>
@@ -142,9 +196,63 @@
                             <div>Credit Score: {{ offer.customer.creditScore }}</div>
                         </td>
                         <td class="px-[14px] py-2 text-sm font-medium">${{ offer.userOffer }}</td>
-                        <td class="px-[14px] py-2 text-sm font-medium">${{ offer.counterOffer }}</td>
+                        <td class="px-[14px] py-2 text-sm font-medium">
+                            <div class="flex flex-col">
+                                <span class="text-xs text-gray-500 mb-1">
+                                    {{ offer.dealerAction === 'user-counter' ? 'User Counter' : 'Dealer Counter' }}
+                                </span>
+                                <span>${{ offer.counterOffer }}</span>
+                            </div>
+                        </td>
+                        <td class="px-[14px] py-2 text-sm">
+                            <span v-if="offer.dealerAction === 'user-counter' && (offer.userAction === 'Accepted' || offer.userAction === 'accept')" class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                                Deal Accepted
+                            </span>
+                            <span v-else-if="offer.dealerAction === 'user-counter' && (offer.userAction === 'rejected' || offer.userAction === 'reject')" class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
+                                Deal Rejected
+                            </span>
+                            <span v-else-if="offer.dealerAction === 'user-counter'" class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                User Countered
+                            </span>
+                            <span v-else-if="offer.dealerAction === 'counter'" class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                                Waiting for User
+                            </span>
+                        </td>
                         <td class="px-[14px] py-2 text-sm">{{ offer.comments }}</td>
                         <td class="px-[14px] py-2 text-sm">{{ offer.DealerComments }}</td>
+                        <td class="px-[14px] py-2 text-sm">
+                            <!-- Show different actions based on the current state -->
+                            <div v-if="offer.dealerAction === 'user-counter' && offer.userAction !== 'Accepted' && offer.userAction !== 'accept' && offer.userAction !== 'rejected' && offer.userAction !== 'reject'" class="flex flex-col gap-2">
+                                <!-- User has countered, dealer can accept, reject, or counter back (only if not already accepted/rejected) -->
+                                <button 
+                                    @click="acceptUserCounter(offer)"
+                                    class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 action-btn"
+                                >
+                                    Accept
+                                </button>
+                                <button 
+                                    @click="rejectUserCounter(offer)"
+                                    class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 action-btn"
+                                >
+                                    Reject
+                                </button>
+                                <button 
+                                    @click="counterUserBid(offer)"
+                                    class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 action-btn"
+                                >
+                                    Counter
+                                </button>
+                            </div>
+                            <div v-else-if="offer.dealerAction === 'user-counter' && (offer.userAction === 'Accepted' || offer.userAction === 'accept')" class="text-green-600 text-xs">
+                                <i class="fas fa-check-circle me-1"></i> Deal Closed
+                            </div>
+                            <div v-else-if="offer.dealerAction === 'user-counter' && (offer.userAction === 'rejected' || offer.userAction === 'reject')" class="text-red-600 text-xs">
+                                <i class="fas fa-times-circle me-1"></i> Deal Closed
+                            </div>
+                            <div v-else-if="offer.dealerAction === 'counter'" class="text-gray-500 text-xs">
+                                Waiting for user response
+                            </div>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -158,6 +266,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useApi } from '~/composables/useApi'
 
 const dropdownOpen = ref(null)
 function toggleDropdown(type) {
@@ -209,12 +318,55 @@ function goToPage(page) {
 // API call to get countered offers
 const { apiGet } = useApi()
 
+// Add action methods for dealers
+const { apiPost } = useApi()
+
+const acceptUserCounter = async (offer) => {
+    try {
+        const payload = {
+            userId: offer.userId,
+            dealerId: JSON.parse(localStorage.getItem('auth')).user._id,
+            carId: offer.carId,
+            bidId: offer.bidId,
+            dealerAction: 'accept'
+        };
+        await apiPost('/bid/dealer-bid-action', payload);
+        await getCounteredOffers(); // Refresh the list
+    } catch (error) {
+        console.error('Error accepting user counter:', error);
+    }
+};
+
+const rejectUserCounter = async (offer) => {
+    try {
+        const payload = {
+            userId: offer.userId,
+            dealerId: JSON.parse(localStorage.getItem('auth')).user._id,
+            carId: offer.carId,
+            bidId: offer.bidId,
+            dealerAction: 'reject'
+        };
+        await apiPost('/bid/dealer-bid-action', payload);
+        await getCounteredOffers(); // Refresh the list
+    } catch (error) {
+        console.error('Error rejecting user counter:', error);
+    }
+};
+
+const counterUserBid = async (offer) => {
+    // This would open a modal for the dealer to enter their counter offer
+    // For now, just log that this functionality needs to be implemented
+    console.log('Counter user bid functionality needs to be implemented');
+    alert('Counter functionality coming soon!');
+};
+
 const getCounteredOffers = async () => {
     try {
         isLoading.value = true
         const dealerId = JSON.parse(localStorage.getItem('auth')).user._id;
         const response = await apiGet(`/bid/get-dealer-bid/counter/${dealerId}`)
         console.log('response', response.data)
+        console.log('Mapped offers with userAction:', response.data.map(item => ({ dealerAction: item.dealerAction, userAction: item.userAction })))
         allOffers.value = mapApiData(response.data)
     } catch (error) {
         console.error('Error fetching countered offers:', error)
@@ -234,10 +386,15 @@ const mapApiData = (apiResponse) => {
             creditScore: item.userId?.creditScore ?? 0
         },
         userOffer: `$${Number(item.bidId?.carBid || 0).toLocaleString()}.00`,
-        counterOffer: `$${Number(item.counterAmount || 0).toLocaleString()}.00`,
+        counterOffer: `$${Number(item.counterBid || 0).toLocaleString()}.00`,
+        dealerAction: item.dealerAction, // Add this to distinguish between dealer and user counter
         comments: item.bidId?.userComments || '',
         DealerComments: item.dealerComments || 'Reference site about car deal, giving information on its origins',
-        status: 'Countered'
+        status: 'Countered',
+        userId: item.userId?._id || item.userId,
+        carId: item.carId?._id || item.carId,
+        bidId: item.bidId?._id || item.bidId,
+        userAction: item.userAction // Add this to check if deal was accepted/rejected
     }));
 }
 
@@ -288,4 +445,17 @@ th {
     text-overflow: ellipsis;
 }
 
+/* Action button styles */
+.action-btn {
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+}
 </style>
