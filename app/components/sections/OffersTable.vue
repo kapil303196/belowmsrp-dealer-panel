@@ -354,7 +354,7 @@ const getAllOffers = async (tab) => {
         case 'Countered':
             response = await apiGet(`/bid/get-dealer-bid/counter/${dealerId}`)
             console.log('response', response.data)
-            allOffers.value = mapApiData(response.data.slice(0, 100))
+            allOffers.value = mapCounteredNewApiData(response.data.slice(0, 100))
             break;
     }
     console.log('allOffers converted', allOffers.value)
@@ -379,6 +379,42 @@ const mapApiData = (apiResponse) => {
         dealerId: JSON.parse(localStorage.getItem('auth') || '{}')?.user?._id || '',
         carId: item.bidId?.carId?._id || item.bidId?.carId || item.carId || ''
     }));
+}
+
+function findLatestUserBidId(history = []) {
+    const sorted = [...history].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+    const lastUserOffer = [...sorted].reverse().find(e => e.type === 'user_offer' && e.bidId)
+    return lastUserOffer?.bidId || ''
+}
+
+const mapCounteredNewApiData = (apiResponse) => {
+    const dealerId = JSON.parse(localStorage.getItem('auth') || '{}')?.user?._id || ''
+    return (apiResponse || []).map(item => {
+        const bidId = findLatestUserBidId(item.negotiationHistory)
+        const customerFirst = item.customerDetails?.firstName || ''
+        const customerLast = item.customerDetails?.lastName || ''
+        const displayName = (customerFirst || customerLast)
+            ? `${customerFirst} ${customerLast}`.trim()
+            : (item.customerDetails?.email || '')
+        return {
+            bidId,
+            image: item.image || '',
+            model: item.carname || '',
+            price: `$${Number(item.msrp || 0).toLocaleString()}.00`,
+            customer: {
+                name: displayName,
+                email: item.customerDetails?.email || '',
+                phone: item.customerDetails?.phoneNumber || '',
+                creditScore: 0
+            },
+            userOffer: Number(item.latestUserOffer || 0).toLocaleString(),
+            comments: item.latestUserComments || '',
+            status: 'Countered',
+            userId: '',
+            dealerId,
+            carId: item.id || ''
+        }
+    })
 }
 
 const mapDealerActionToStatus = (dealerAction) => {
@@ -456,6 +492,10 @@ const isRejecting = (offer) => rejectingIds.value.has(offer.bidId)
 
 const acceptBid = async (offer) => {
     try {
+        if (!offer?.userId || !offer?.carId || !offer?.bidId) {
+            await Swal.fire('Missing data', 'Cannot accept: required identifiers are missing.', 'warning')
+            return
+        }
         acceptingIds.value.add(offer.bidId)
         const carIdRaw = offer.carId
         const bidIdRaw = offer.bidId
@@ -477,6 +517,10 @@ const acceptBid = async (offer) => {
 
 const rejectBid = async (offer) => {
     try {
+        if (!offer?.userId || !offer?.carId || !offer?.bidId) {
+            await Swal.fire('Missing data', 'Cannot reject: required identifiers are missing.', 'warning')
+            return
+        }
         rejectingIds.value.add(offer.bidId)
         const carIdRaw = offer.carId
         const bidIdRaw = offer.bidId
@@ -531,6 +575,11 @@ const submitCounter = async () => {
         const carId = typeof carIdRaw === 'object' && carIdRaw?._id ? carIdRaw._id : carIdRaw
         const bidIdRaw = currentOffer.value.bidId
         const bidId = typeof bidIdRaw === 'object' && bidIdRaw?._id ? bidIdRaw._id : bidIdRaw
+        if (!userId || !carId || !bidId) {
+            await Swal.fire('Missing data', 'Cannot counter: required identifiers are missing.', 'warning')
+            isSubmitting.value = false
+            return
+        }
         const dealerEmail = auth?.user?.email || ''
         const dealerName = auth?.user?.name || auth?.user?.fullName || 'Dealer'
         const userDetails = auth?.user ? JSON.stringify(auth.user) : '{}'

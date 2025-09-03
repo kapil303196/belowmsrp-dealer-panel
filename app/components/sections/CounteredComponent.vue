@@ -325,39 +325,53 @@ const { apiPost } = useApi()
 
 const acceptUserCounter = async (offer) => {
     try {
+        const dealerId = JSON.parse(localStorage.getItem('auth')).user._id
+        if (!offer?.userId || !dealerId || !offer?.carId || !offer?.bidId) {
+            await Swal.fire('Missing data', 'Cannot accept: required identifiers are missing.', 'warning')
+            return
+        }
         const payload = {
             userId: offer.userId,
-            dealerId: JSON.parse(localStorage.getItem('auth')).user._id,
+            dealerId,
             carId: offer.carId,
             bidId: offer.bidId,
             dealerAction: 'accept'
-        };
-        await apiPost('/bid/dealer-bid-action', payload);
-        await getCounteredOffers(); // Refresh the list
+        }
+        await apiPost('/bid/dealer-bid-action', payload)
+        await getCounteredOffers() // Refresh the list
     } catch (error) {
-        console.error('Error accepting user counter:', error);
+        console.error('Error accepting user counter:', error)
     }
-};
+}
 
 const rejectUserCounter = async (offer) => {
     try {
+        const dealerId = JSON.parse(localStorage.getItem('auth')).user._id
+        if (!offer?.userId || !dealerId || !offer?.carId || !offer?.bidId) {
+            await Swal.fire('Missing data', 'Cannot reject: required identifiers are missing.', 'warning')
+            return
+        }
         const payload = {
             userId: offer.userId,
-            dealerId: JSON.parse(localStorage.getItem('auth')).user._id,
+            dealerId,
             carId: offer.carId,
             bidId: offer.bidId,
             dealerAction: 'reject'
-        };
-        await apiPost('/bid/dealer-bid-action', payload);
-        await getCounteredOffers(); // Refresh the list
+        }
+        await apiPost('/bid/dealer-bid-action', payload)
+        await getCounteredOffers() // Refresh the list
     } catch (error) {
-        console.error('Error rejecting user counter:', error);
+        console.error('Error rejecting user counter:', error)
     }
-};
+}
 
 const counterUserBid = async (offer) => {
     try {
-        // Use SweetAlert2 modal for better UX
+        const dealerId = JSON.parse(localStorage.getItem('auth')).user._id
+        if (!offer?.userId || !dealerId || !offer?.carId || !offer?.bidId) {
+            await Swal.fire('Missing data', 'Cannot counter: required identifiers are missing.', 'warning')
+            return
+        }
         const { value: formValues } = await Swal.fire({
             title: "Counter Offer",
             html:
@@ -365,36 +379,33 @@ const counterUserBid = async (offer) => {
                 '<input id="swal-input-comment" class="swal2-input" placeholder="Comments (optional)">',
             focusConfirm: false,
             preConfirm: () => {
-                const amount = document.getElementById('swal-input-amount').value;
-                const comment = document.getElementById('swal-input-comment').value;
+                const amount = document.getElementById('swal-input-amount').value
+                const comment = document.getElementById('swal-input-comment').value
                 if (!amount) {
-                    Swal.showValidationMessage('Please enter a counter amount');
-                    return;
+                    Swal.showValidationMessage('Please enter a counter amount')
+                    return
                 }
-                return { amount, comment };
+                return { amount, comment }
             }
-        });
-        
-        if (!formValues) return;
-        
+        })
+        if (!formValues) return
         const payload = {
             userId: offer.userId,
-            dealerId: JSON.parse(localStorage.getItem('auth')).user._id,
+            dealerId,
             carId: offer.carId,
             bidId: offer.bidId,
             dealerAction: 'counter',
             counterBid: formValues.amount,
             dealerComments: formValues.comment
-        };
-        
-        await apiPost('/bid/dealer-bid-counter', payload);
-        await getCounteredOffers(); // Refresh the list
-        Swal.fire("Success!", "Counter Offer Sent", "success");
+        }
+        await apiPost('/bid/dealer-bid-counter', payload)
+        await getCounteredOffers() // Refresh the list
+        Swal.fire("Success!", "Counter Offer Sent", "success")
     } catch (error) {
-        console.error('Error countering user bid:', error);
-        Swal.fire("Error!", "Failed to send counter offer", "error");
+        console.error('Error countering user bid:', error)
+        Swal.fire("Error!", "Failed to send counter offer", "error")
     }
-};
+}
 
 const getCounteredOffers = async () => {
     try {
@@ -436,29 +447,76 @@ const downloadPdf = async (offer) => {
     }
 }
 
+function parseLatestFlagsFromStatus(status) {
+    const s = (status || '').toLowerCase()
+    return {
+        isDealerCountered: s.includes('countered') && s.includes('dealer'),
+        isUserCountered: s.includes('countered') && s.includes('user'),
+        isAccepted: s.includes('accepted'),
+        isRejected: s.includes('rejected')
+    }
+}
+
+function deriveDealerActionFromHistory(history = []) {
+    // Find the latest dealer action in the timeline
+    const sorted = [...history].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+    const lastDealer = [...sorted].reverse().find(e => e.type === 'dealer_action')
+    return lastDealer?.action || ''
+}
+
+function deriveUserActionFromHistoryOrStatus(history = [], status = '') {
+    const sorted = [...history].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+    const lastUser = [...sorted].reverse().find(e => e.type === 'user_action')
+    if (lastUser?.action) return lastUser.action
+    const s = (status || '').toLowerCase()
+    if (s.includes('accepted')) return 'Accepted'
+    if (s.includes('rejected')) return 'rejected'
+    return ''
+}
+
+function findLatestUserBidId(history = []) {
+    const sorted = [...history].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+    const lastUserOffer = [...sorted].reverse().find(e => e.type === 'user_offer' && e.bidId)
+    return lastUserOffer?.bidId || ''
+}
+
 const mapApiData = (apiResponse) => {
-    return apiResponse.map(item => ({
-        image: item.bidId?.carImage || '',
-        model: `${item.bidId?.carMaker || ''} ${item.bidId?.carName || ''}`.trim(),
-        brand: item.bidId?.carMaker || '',
-        price: `$${Number(item.bidId?.carMsrp || 0).toLocaleString()}.00`,
-        customer: {
-            name: item.userId?.fullName ? `${item.userId.fullName.split(' ')[0]} ${item.userId.fullName.split(' ')[1]?.charAt(0) || ''}.` : '',
-            creditScore: item.userId?.creditScore ?? 0
-        },
-        userOffer: Number(item.bidId?.carBid || 0).toLocaleString(),
-        counterOffer: Number(item.counterBid || 0).toLocaleString(),
-        dealerAction: item.dealerAction, // Add this to distinguish between dealer and user counter
-        // Show current round comments correctly: if user-counter, show user's latest counter comment stored in dealerComments
-        // (backend stores user counter comment in dealerComments for 'user-counter' entries)
-        comments: item.dealerAction === 'user-counter' ? (item.dealerComments || item.bidId?.userComments || '') : '',
-        DealerComments: item.dealerAction === 'counter' ? (item.dealerComments || '') : '',
-        status: 'Countered',
-        userId: item.userId?._id || item.userId,
-        carId: item.carId?._id || item.carId,
-        bidId: item.bidId?._id || item.bidId,
-        userAction: item.userAction // Add this to check if deal was accepted/rejected
-    }));
+    return (apiResponse || []).map(item => {
+        const flags = parseLatestFlagsFromStatus(item.status)
+        const dealerAction = deriveDealerActionFromHistory(item.negotiationHistory)
+        const userAction = deriveUserActionFromHistoryOrStatus(item.negotiationHistory, item.status)
+        const bidId = findLatestUserBidId(item.negotiationHistory)
+        const model = item.carname || ''
+        const brand = (model || '').split(' ')[0] || ''
+        const customerFirst = item.customerDetails?.firstName || ''
+        const customerLast = item.customerDetails?.lastName || ''
+        const customerEmail = item.customerDetails?.email || ''
+        const customerPhone = item.customerDetails?.phoneNumber || ''
+        const displayName = (customerFirst || customerLast)
+            ? `${customerFirst} ${customerLast}`.trim()
+            : (customerEmail || '')
+        return {
+            image: item.image || '',
+            model,
+            brand,
+            price: `$${Number(item.msrp || 0).toLocaleString()}.00`,
+            customer: {
+                name: displayName,
+                creditScore: 0
+            },
+            userOffer: Number(item.latestUserOffer || 0).toLocaleString(),
+            counterOffer: Number(item.latestDealerOffer || 0).toLocaleString(),
+            dealerAction,
+            comments: item.latestUserComments || '',
+            DealerComments: item.latestDealerComments || '',
+            status: item.status || 'Countered',
+            userId: '',
+            carId: item.id || '',
+            bidId,
+            userAction,
+            _flags: flags
+        }
+    })
 }
 
 onMounted(() => {
