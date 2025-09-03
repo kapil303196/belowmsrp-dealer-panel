@@ -224,25 +224,22 @@
                         <td class="px-[14px] py-2 text-sm">{{ offer.DealerComments }}</td>
                         <td class="px-[14px] py-2 text-sm">
                             <!-- Show different actions based on the current state -->
-                            <div v-if="offer.dealerAction === 'user-counter' && offer.userAction !== 'Accepted' && offer.userAction !== 'accept' && offer.userAction !== 'rejected' && offer.userAction !== 'reject'" class="flex flex-col gap-2">
-                                <!-- User has countered, dealer can accept, reject, or counter back (only if not already accepted/rejected) -->
-                                <button 
-                                    @click="acceptUserCounter(offer)"
-                                    class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 action-btn"
-                                >
-                                    Accept
+                            <div v-if="offer.dealerAction === 'user-counter' && offer.userAction !== 'Accepted' && offer.userAction !== 'accept' && offer.userAction !== 'rejected' && offer.userAction !== 'reject'" class="flex items-center gap-1">
+                                <button @click="acceptUserCounter(offer)" class="relative w-[38px] h-10 border border-[#2C8436] rounded-lg flex items-center justify-center flex-none ">
+                                    <img src="../../assets/images/icons/green-check.svg" alt="icon" class="w-5 h-5">
                                 </button>
-                                <button 
-                                    @click="rejectUserCounter(offer)"
-                                    class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 action-btn"
-                                >
-                                    Reject
+                                <button @click="rejectUserCounter(offer)" class="relative w-[38px] h-10 border border-[#D53660] rounded-lg flex items-center justify-center flex-none ">
+                                    <img src="../../assets/images/icons/cross-icon.svg" alt="icon" class="w-5 h-5">
                                 </button>
-                                <button 
-                                    @click="counterUserBid(offer)"
-                                    class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 action-btn"
-                                >
-                                    Counter
+                                <button @click="counterUserBid(offer)" class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none ">
+                                    <img src="../../assets/images/icons/equal-icon.svg" alt="icon" class="w-5 h-5">
+                                </button>
+                                <button @click="downloadPdf(offer)" class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none ">
+                                    <svg v-if="isDownloading(offer)" class="animate-spin h-5 w-5 text-primary" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                    <img v-else src="../../assets/images/icons/download-icon.svg" alt="icon" class="w-5 h-5">
                                 </button>
                             </div>
                             <div v-else-if="offer.dealerAction === 'user-counter' && (offer.userAction === 'Accepted' || offer.userAction === 'accept')" class="text-green-600 text-xs">
@@ -321,7 +318,7 @@ function goToPage(page) {
 }
 
 // API call to get countered offers
-const { apiGet } = useApi()
+const { apiGet, apiGetBlob } = useApi()
 
 // Add action methods for dealers
 const { apiPost } = useApi()
@@ -414,6 +411,31 @@ const getCounteredOffers = async () => {
     }
 }
 
+// PDF download (parity with Offers)
+const downloadingIds = ref(new Set())
+const isDownloading = (offer) => downloadingIds.value.has(offer.bidId || offer._id)
+const downloadPdf = async (offer) => {
+    try {
+        const bidId = offer.bidId || offer._id
+        if (!bidId) return
+        downloadingIds.value.add(bidId)
+        const blob = await apiGetBlob(`/bid/user-bid/${bidId}/pdf`)
+        const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }))
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `bid-${bidId}.pdf`
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+    } catch (e) {
+        console.error('Failed to download PDF', e)
+    } finally {
+        const bidId = offer.bidId || offer._id
+        downloadingIds.value.delete(bidId)
+    }
+}
+
 const mapApiData = (apiResponse) => {
     return apiResponse.map(item => ({
         image: item.bidId?.carImage || '',
@@ -424,8 +446,8 @@ const mapApiData = (apiResponse) => {
             name: item.userId?.fullName ? `${item.userId.fullName.split(' ')[0]} ${item.userId.fullName.split(' ')[1]?.charAt(0) || ''}.` : '',
             creditScore: item.userId?.creditScore ?? 0
         },
-        userOffer: `$${Number(item.bidId?.carBid || 0).toLocaleString()}.00`,
-        counterOffer: `$${Number(item.counterBid || 0).toLocaleString()}.00`,
+        userOffer: Number(item.bidId?.carBid || 0).toLocaleString(),
+        counterOffer: Number(item.counterBid || 0).toLocaleString(),
         dealerAction: item.dealerAction, // Add this to distinguish between dealer and user counter
         // Show current round comments correctly: if user-counter, show user's latest counter comment stored in dealerComments
         // (backend stores user counter comment in dealerComments for 'user-counter' entries)
