@@ -20,6 +20,8 @@
         <div v-if="!isLoading && paginatedOffers.length === 0" class="flex items-center justify-center py-10 text-primary/60">
             No offers to display.
         </div>
+        
+
 
         <!-- Cards: Small screens only -->
         <div class="md:hidden flex flex-col gap-4">
@@ -267,6 +269,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useApi } from '~/composables/useApi'
+import Swal from 'sweetalert2'
 
 const dropdownOpen = ref(null)
 function toggleDropdown(type) {
@@ -289,6 +292,8 @@ const allOffers = ref([])
 const searchText = ref('')
 const selectedModel = ref('')
 const isLoading = ref(false)
+
+
 
 const filteredOffers = computed(() => {
     const s = searchText.value.trim().toLowerCase()
@@ -354,10 +359,44 @@ const rejectUserCounter = async (offer) => {
 };
 
 const counterUserBid = async (offer) => {
-    // This would open a modal for the dealer to enter their counter offer
-    // For now, just log that this functionality needs to be implemented
-    console.log('Counter user bid functionality needs to be implemented');
-    alert('Counter functionality coming soon!');
+    try {
+        // Use SweetAlert2 modal for better UX
+        const { value: formValues } = await Swal.fire({
+            title: "Counter Offer",
+            html:
+                '<input id="swal-input-amount" class="swal2-input" placeholder="Counter amount" type="number" min="0" step="1">' +
+                '<input id="swal-input-comment" class="swal2-input" placeholder="Comments (optional)">',
+            focusConfirm: false,
+            preConfirm: () => {
+                const amount = document.getElementById('swal-input-amount').value;
+                const comment = document.getElementById('swal-input-comment').value;
+                if (!amount) {
+                    Swal.showValidationMessage('Please enter a counter amount');
+                    return;
+                }
+                return { amount, comment };
+            }
+        });
+        
+        if (!formValues) return;
+        
+        const payload = {
+            userId: offer.userId,
+            dealerId: JSON.parse(localStorage.getItem('auth')).user._id,
+            carId: offer.carId,
+            bidId: offer.bidId,
+            dealerAction: 'counter',
+            counterBid: formValues.amount,
+            dealerComments: formValues.comment
+        };
+        
+        await apiPost('/bid/dealer-bid-counter', payload);
+        await getCounteredOffers(); // Refresh the list
+        Swal.fire("Success!", "Counter Offer Sent", "success");
+    } catch (error) {
+        console.error('Error countering user bid:', error);
+        Swal.fire("Error!", "Failed to send counter offer", "error");
+    }
 };
 
 const getCounteredOffers = async () => {
@@ -388,8 +427,10 @@ const mapApiData = (apiResponse) => {
         userOffer: `$${Number(item.bidId?.carBid || 0).toLocaleString()}.00`,
         counterOffer: `$${Number(item.counterBid || 0).toLocaleString()}.00`,
         dealerAction: item.dealerAction, // Add this to distinguish between dealer and user counter
-        comments: item.bidId?.userComments || '',
-        DealerComments: item.dealerComments || 'Reference site about car deal, giving information on its origins',
+        // Show current round comments correctly: if user-counter, show user's latest counter comment stored in dealerComments
+        // (backend stores user counter comment in dealerComments for 'user-counter' entries)
+        comments: item.dealerAction === 'user-counter' ? (item.dealerComments || item.bidId?.userComments || '') : '',
+        DealerComments: item.dealerAction === 'counter' ? (item.dealerComments || '') : '',
         status: 'Countered',
         userId: item.userId?._id || item.userId,
         carId: item.carId?._id || item.carId,
