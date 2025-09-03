@@ -11,7 +11,14 @@ export const useAuthStore = defineStore('auth', () => {
         id: 1,
         email,
         name: 'Admin User',
-        role: 'admin'
+        role: 'admin',
+        // Dealer profile fields for UI compatibility
+        dealershipName: 'Demo Dealership',
+        employeeName: 'Admin User',
+        address: '123 Main St, Springfield, USA',
+        licenseNumber: 'DL-000000',
+        contactPhone: '(000) 000-0000',
+        logoDataUrl: null
       }
       
       if (process.client) {
