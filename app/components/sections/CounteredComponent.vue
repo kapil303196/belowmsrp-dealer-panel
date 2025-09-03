@@ -63,9 +63,6 @@
                                 <span class="text-[#081735] opacity-55">Counter Offer:</span>
                                 <span class="font-semibold">
                                     <div class="flex flex-col items-end">
-                                        <span class="text-xs text-gray-500 mb-1">
-                                            {{ offer.dealerAction === 'user-counter' ? 'User Counter' : 'Dealer Counter' }}
-                                        </span>
                                         <span>${{ offer.counterOffer }}</span>
                                     </div>
                                 </span>
@@ -200,9 +197,6 @@
                         <td class="px-[14px] py-2 text-sm font-medium">${{ offer.userOffer }}</td>
                         <td class="px-[14px] py-2 text-sm font-medium">
                             <div class="flex flex-col">
-                                <span class="text-xs text-gray-500 mb-1">
-                                    {{ offer.dealerAction === 'user-counter' ? 'User Counter' : 'Dealer Counter' }}
-                                </span>
                                 <span>${{ offer.counterOffer }}</span>
                             </div>
                         </td>
@@ -326,19 +320,19 @@ const { apiPost } = useApi()
 const acceptUserCounter = async (offer) => {
     try {
         const dealerId = JSON.parse(localStorage.getItem('auth')).user._id
-        if (!offer?.userId || !dealerId || !offer?.carId || !offer?.bidId) {
+        if (!dealerId || !offer?.carId || !offer?.bidId) {
             await Swal.fire('Missing data', 'Cannot accept: required identifiers are missing.', 'warning')
             return
         }
         const payload = {
-            userId: offer.userId,
             dealerId,
             carId: offer.carId,
             bidId: offer.bidId,
             dealerAction: 'accept'
         }
+        if (offer?.userId) payload.userId = offer.userId
         await apiPost('/bid/dealer-bid-action', payload)
-        await getCounteredOffers() // Refresh the list
+        await getCounteredOffers()
     } catch (error) {
         console.error('Error accepting user counter:', error)
     }
@@ -347,19 +341,19 @@ const acceptUserCounter = async (offer) => {
 const rejectUserCounter = async (offer) => {
     try {
         const dealerId = JSON.parse(localStorage.getItem('auth')).user._id
-        if (!offer?.userId || !dealerId || !offer?.carId || !offer?.bidId) {
+        if (!dealerId || !offer?.carId || !offer?.bidId) {
             await Swal.fire('Missing data', 'Cannot reject: required identifiers are missing.', 'warning')
             return
         }
         const payload = {
-            userId: offer.userId,
             dealerId,
             carId: offer.carId,
             bidId: offer.bidId,
             dealerAction: 'reject'
         }
+        if (offer?.userId) payload.userId = offer.userId
         await apiPost('/bid/dealer-bid-action', payload)
-        await getCounteredOffers() // Refresh the list
+        await getCounteredOffers()
     } catch (error) {
         console.error('Error rejecting user counter:', error)
     }
@@ -368,7 +362,7 @@ const rejectUserCounter = async (offer) => {
 const counterUserBid = async (offer) => {
     try {
         const dealerId = JSON.parse(localStorage.getItem('auth')).user._id
-        if (!offer?.userId || !dealerId || !offer?.carId || !offer?.bidId) {
+        if (!dealerId || !offer?.carId || !offer?.bidId) {
             await Swal.fire('Missing data', 'Cannot counter: required identifiers are missing.', 'warning')
             return
         }
@@ -390,7 +384,6 @@ const counterUserBid = async (offer) => {
         })
         if (!formValues) return
         const payload = {
-            userId: offer.userId,
             dealerId,
             carId: offer.carId,
             bidId: offer.bidId,
@@ -398,8 +391,9 @@ const counterUserBid = async (offer) => {
             counterBid: formValues.amount,
             dealerComments: formValues.comment
         }
+        if (offer?.userId) payload.userId = offer.userId
         await apiPost('/bid/dealer-bid-counter', payload)
-        await getCounteredOffers() // Refresh the list
+        await getCounteredOffers()
         Swal.fire("Success!", "Counter Offer Sent", "success")
     } catch (error) {
         console.error('Error countering user bid:', error)
