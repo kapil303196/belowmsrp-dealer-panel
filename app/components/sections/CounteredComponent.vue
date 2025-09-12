@@ -71,8 +71,14 @@
                     </div>
                     
                     <!-- Status Badge -->
-                    <div class="mt-2 mb-3">
-                        <span v-if="offer.dealerAction === 'user-counter'" class="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                    <div v-if="offer.status" class="mt-2 mb-3">
+                        <span v-if="isOfferAccepted(offer)" class="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                            Deal Accepted
+                        </span>
+                        <span v-else-if="isOfferRejected(offer)" class="px-3 py-1 bg-red-100 text-red-800 text-xs rounded-full">
+                            Deal Rejected
+                        </span>
+                        <span v-else-if="offer.dealerAction === 'user-counter'" class="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
                             User Countered - Action Required
                         </span>
                         <span v-else-if="offer.dealerAction === 'counter'" class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
@@ -90,7 +96,7 @@
                 </div>
                 
                 <!-- Mobile Actions -->
-                <div v-if="offer.dealerAction === 'user-counter' && offer.userAction !== 'Accepted' && offer.userAction !== 'accept' && offer.userAction !== 'rejected' && offer.userAction !== 'reject'" class="flex gap-2 mt-3">
+                <div v-if="offer.dealerAction === 'user-counter' && !isOfferAccepted(offer) && !isOfferRejected(offer)" class="flex gap-2 mt-3">
                     <button 
                         @click="acceptUserCounter(offer)"
                         class="flex-1 px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 action-btn"
@@ -110,10 +116,10 @@
                         Counter
                     </button>
                 </div>
-                <div v-else-if="offer.dealerAction === 'user-counter' && (offer.userAction === 'Accepted' || offer.userAction === 'accept')" class="text-green-600 text-xs mt-3 text-center">
+                <div v-else-if="isOfferAccepted(offer)" class="text-green-600 text-xs mt-3 text-center">
                     <i class="fas fa-check-circle me-1"></i> Deal Closed
                 </div>
-                <div v-else-if="offer.dealerAction === 'user-counter' && (offer.userAction === 'rejected' || offer.userAction === 'reject')" class="text-red-600 text-xs mt-3 text-center">
+                <div v-else-if="isOfferRejected(offer)" class="text-red-600 text-xs mt-3 text-center">
                     <i class="fas fa-times-circle me-1"></i> Deal Closed
                 </div>
                 <div v-else-if="offer.dealerAction === 'counter'" class="text-gray-500 text-xs mt-3 text-center">
@@ -201,16 +207,16 @@
                             </div>
                         </td>
                         <td class="px-[14px] py-2 text-sm">
-                            <span v-if="offer.dealerAction === 'user-counter' && (offer.userAction === 'Accepted' || offer.userAction === 'accept')" class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                            <span v-if="offer.status && isOfferAccepted(offer)" class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
                                 Deal Accepted
                             </span>
-                            <span v-else-if="offer.dealerAction === 'user-counter' && (offer.userAction === 'rejected' || offer.userAction === 'reject')" class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
+                            <span v-else-if="offer.status && isOfferRejected(offer)" class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
                                 Deal Rejected
                             </span>
-                            <span v-else-if="offer.dealerAction === 'user-counter'" class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                            <span v-else-if="offer.status && offer.dealerAction === 'user-counter'" class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
                                 User Countered
                             </span>
-                            <span v-else-if="offer.dealerAction === 'counter'" class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                            <span v-else-if="offer.status && offer.dealerAction === 'counter'" class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
                                 Waiting for User
                             </span>
                         </td>
@@ -218,7 +224,7 @@
                         <td class="px-[14px] py-2 text-sm">{{ offer.DealerComments }}</td>
                         <td class="px-[14px] py-2 text-sm">
                             <!-- Show different actions based on the current state -->
-                            <div v-if="offer.dealerAction === 'user-counter' && offer.userAction !== 'Accepted' && offer.userAction !== 'accept' && offer.userAction !== 'rejected' && offer.userAction !== 'reject'" class="flex items-center gap-1">
+                            <div v-if="offer.dealerAction === 'user-counter' && !isOfferAccepted(offer) && !isOfferRejected(offer)" class="flex items-center gap-1">
                                 <button @click="acceptUserCounter(offer)" class="relative w-[38px] h-10 border border-[#2C8436] rounded-lg flex items-center justify-center flex-none ">
                                     <img src="../../assets/images/icons/green-check.svg" alt="icon" class="w-5 h-5">
                                 </button>
@@ -236,10 +242,10 @@
                                     <img v-else src="../../assets/images/icons/download-icon.svg" alt="icon" class="w-5 h-5">
                                 </button>
                             </div>
-                            <div v-else-if="offer.dealerAction === 'user-counter' && (offer.userAction === 'Accepted' || offer.userAction === 'accept')" class="text-green-600 text-xs">
+                            <div v-else-if="isOfferAccepted(offer)" class="text-green-600 text-xs">
                                 <i class="fas fa-check-circle me-1"></i> Deal Closed
                             </div>
-                            <div v-else-if="offer.dealerAction === 'user-counter' && (offer.userAction === 'rejected' || offer.userAction === 'reject')" class="text-red-600 text-xs">
+                            <div v-else-if="isOfferRejected(offer)" class="text-red-600 text-xs">
                                 <i class="fas fa-times-circle me-1"></i> Deal Closed
                             </div>
                             <div v-else-if="offer.dealerAction === 'counter'" class="text-gray-500 text-xs">
@@ -451,6 +457,19 @@ function parseLatestFlagsFromStatus(status) {
     }
 }
 
+// Helpers to determine accepted/rejected state across mixed API shapes
+function isOfferAccepted(offer) {
+    const status = (offer?.status || '').toLowerCase()
+    const userAction = (offer?.userAction || '').toLowerCase()
+    return status.includes('accept') || userAction.includes('accept')
+}
+
+function isOfferRejected(offer) {
+    const status = (offer?.status || '').toLowerCase()
+    const userAction = (offer?.userAction || '').toLowerCase()
+    return status.includes('reject') || userAction.includes('reject')
+}
+
 function deriveDealerActionFromHistory(history = []) {
     // Find the latest dealer action in the timeline
     const sorted = [...history].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
@@ -503,7 +522,8 @@ const mapApiData = (apiResponse) => {
             dealerAction,
             comments: item.latestUserComments || '',
             DealerComments: item.latestDealerComments || '',
-            status: item.status || 'Countered',
+            // Do not default a status; if empty/null, UI should hide it
+            status: item.status || '',
             userId: '',
             carId: item.id || '',
             bidId,
