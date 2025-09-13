@@ -27,7 +27,9 @@
                   <!-- <img :src="stat.weekIcon" alt="icon" /> -->
                 </div>
               </div>
-              <button class="min-w-[54px] min-h-[54px] rounded-full flex items-center justify-center max-sm:hidden" :class="stat.buttonBg">
+              <button class="min-w-[54px] min-h-[54px] rounded-full flex items-center justify-center max-sm:hidden hover:opacity-80 transition-opacity" 
+                      :class="stat.buttonBg"
+                      @click="handleStatClick(stat)">
                 <img :src="stat.buttonIcon" alt="icon" />
               </button>
             </div>
@@ -41,24 +43,23 @@
 </template>
 
 <script setup>
-import arrowUpGreen from '~/assets/images/icons/arrow-up-green.svg';
-import arrowDownRed from '~/assets/images/icons/arrow-down-red.svg';
-import dropdownAngle from '~/assets/images/icons/droppdown-angle-stats.svg';
-import offersIcon from '~/assets/images/icons/offers-icon-stats.svg';
-import vehicleLogo from '~/assets/images/icons/vehicle-logo.svg';
-import homeIcon from '~/assets/images/icons/home-icon-stats.svg';
-import statsHamburger from '~/assets/images/icons/stats-hamburger.svg';
+import arrowUpGreen from "~/assets/images/icons/arrow-up-green.svg";
+import arrowDownRed from "~/assets/images/icons/arrow-down-red.svg";
+import dropdownAngle from "~/assets/images/icons/droppdown-angle-stats.svg";
+import offersIcon from "~/assets/images/icons/offers-icon-stats.svg";
+import vehicleLogo from "~/assets/images/icons/vehicle-logo.svg";
+import homeIcon from "~/assets/images/icons/home-icon-stats.svg";
+import statsHamburger from "~/assets/images/icons/stats-hamburger.svg";
 
-const { apiGet } = useApi()
-const { user } = useAuth()
-const displayName = computed(() => user.value?.fullName || user.value?.name || user.value?.email || 'Dealer')
-const stats = ref([])
+const { apiGet } = useApi();
+const { user } = useAuth();
+const displayName = computed(() => user.value?.fullName || user.value?.name || user.value?.email || "Dealer");
+const stats = ref([]);
 const getStats = async () => {
-  const response = await apiGet('/stats?filter=lifetime')
-  console.log('response', response.data)
-  stats.value = mapStatsData(response.data)
-  return response
-}
+  const response = await apiGet("/stats?filter=lifetime");
+  stats.value = mapStatsData(response.data);
+  return response;
+};
 
 const mapStatsData = (apiData) => {
   const iconMap = {
@@ -68,18 +69,31 @@ const mapStatsData = (apiData) => {
     offersIcon,
     vehicleLogo,
     homeIcon,
-    statsHamburger
-  }
-  
-  return apiData.map(item => ({
+    statsHamburger,
+  };
+
+  return apiData.map((item) => ({
     ...item,
     trendIcon: iconMap[item.trendIcon] || item.trendIcon,
     weekIcon: iconMap[item.weekIcon] || item.weekIcon,
-    buttonIcon: iconMap[item.buttonIcon] || item.buttonIcon
-  }))
-}
+    buttonIcon: iconMap[item.buttonIcon] || item.buttonIcon,
+  }));
+};
 onMounted(() => {
-  getStats()
-})
+  getStats();
+});
 
+// Handle stat button clicks
+const handleStatClick = (stat) => {
+  // Navigate based on the stat type
+  if (stat.title.toLowerCase().includes('offers')) {
+    navigateTo('/offers');
+  } else if (stat.title.toLowerCase().includes('accepted')) {
+    navigateTo('/accepted');
+  } else if (stat.title.toLowerCase().includes('rejected')) {
+    navigateTo('/rejected');
+  } else if (stat.title.toLowerCase().includes('countered')) {
+    navigateTo('/countered');
+  }
+};
 </script>

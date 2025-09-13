@@ -132,7 +132,6 @@
                         Team access for employees
                     </li>
                 </ul>
-                <div class="text-primary-light text-sm">No trade-in details required during dealer signup.</div>
             </div>
         </div>
     </div>
