@@ -210,10 +210,6 @@ const getAcceptedOffers = async () => {
     isLoading.value = true;
     const dealerId = JSON.parse(localStorage.getItem("auth")).user._id;
     const response = await apiGet(`/bid/get-dealer-bid/accept/${dealerId}`);
-    console.log('🔍 [Accepted] API Response:', response.data);
-    if (response.data && response.data.length > 0) {
-      console.log('🔍 [Accepted] First item customerDetails:', response.data[0].customerDetails);
-    }
     allOffers.value = await mapApiData(response.data);
   } catch (error) {
     console.error("Error fetching accepted offers:", error);
@@ -247,7 +243,7 @@ const mapApiData = async (apiResponse) => {
     .map((item) => {
       // Handle both string and object user IDs for customerDetails.userId
       if (item.customerDetails?.userId) {
-        if (typeof item.customerDetails.userId === 'string') {
+        if (typeof item.customerDetails.userId === "string") {
           return item.customerDetails.userId;
         } else if (item.customerDetails.userId._id) {
           return item.customerDetails.userId._id;
@@ -278,7 +274,7 @@ const mapApiData = async (apiResponse) => {
     // Extract userId properly - handle both string and object formats
     let userId = null;
     if (item.customerDetails?.userId) {
-      if (typeof item.customerDetails.userId === 'string') {
+      if (typeof item.customerDetails.userId === "string") {
         userId = item.customerDetails.userId;
       } else if (item.customerDetails.userId._id) {
         userId = item.customerDetails.userId._id;
@@ -289,15 +285,6 @@ const mapApiData = async (apiResponse) => {
     userId = userId ? String(userId) : null;
 
     const userCreditScore = creditScores[userId] || { hasCreditScore: false, creditScoreTier: null };
-
-    console.log('🔍 [Accepted mapApiData] Processing item:', {
-      customerDetails: item.customerDetails,
-      firstName: item.customerDetails?.firstName,
-      lastName: item.customerDetails?.lastName,
-      email: item.customerDetails?.email,
-      phoneNumber: item.customerDetails?.phoneNumber,
-      userId: userId
-    });
 
     return {
       image: item.image || "",

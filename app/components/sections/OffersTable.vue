@@ -129,6 +129,9 @@
                   </svg>
                   <img v-else src="../../assets/images/icons/green-check.svg" alt="icon" class="w-5 h-5" />
                 </button>
+                <button @click="openCounterModal(offer)" class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none">
+                  <img src="../../assets/images/icons/equal-icon.svg" alt="icon" class="w-5 h-5" />
+                </button>
                 <button
                   @click="rejectBid(offer)"
                   :disabled="isAccepting(offer) || isRejecting(offer)"
@@ -139,9 +142,6 @@
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                   </svg>
                   <img v-else src="../../assets/images/icons/cross-icon.svg" alt="icon" class="w-5 h-5" />
-                </button>
-                <button @click="openCounterModal(offer)" class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none">
-                  <img src="../../assets/images/icons/equal-icon.svg" alt="icon" class="w-5 h-5" />
                 </button>
                 <button @click="downloadPdf(offer)" class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none">
                   <svg v-if="isDownloading(offer)" class="animate-spin h-5 w-5 text-primary" viewBox="0 0 24 24">
@@ -222,6 +222,9 @@
             </svg>
             <img v-else src="../../assets/images/icons/green-check.svg" alt="icon" class="w-5 h-5" />
           </button>
+          <button @click="openCounterModal(offer)" class="w-full h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center">
+            <img src="../../assets/images/icons/equal-icon.svg" alt="icon" class="w-5 h-5" />
+          </button>
           <button
             @click="rejectBid(offer)"
             :disabled="isAccepting(offer) || isRejecting(offer)"
@@ -232,9 +235,6 @@
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
             </svg>
             <img v-else src="../../assets/images/icons/cross-icon.svg" alt="icon" class="w-5 h-5" />
-          </button>
-          <button @click="openCounterModal(offer)" class="w-full h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center">
-            <img src="../../assets/images/icons/equal-icon.svg" alt="icon" class="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -345,79 +345,79 @@ watch(activeTab, () => {
 
 const { apiGet, apiGetBlob, apiPost, apiPostForm } = useApi();
 const { getMultipleUserCreditScores } = useCreditScore();
- const getAllOffers = async (tab) => {
-   let response;
-   let dealerId = JSON.parse(localStorage.getItem("auth")).user._id;
-   switch (tab) {
-     case "All Offers":
-       response = await apiGet("/bid/all-bid");
-       allOffers.value = await mapAllOffersApiData(response.data.slice(0, 100));
-       break;
-     case "Accepted":
-       response = await apiGet(`/bid/get-dealer-bid/accept/${dealerId}`);
-       allOffers.value = await mapApiData(response.data.slice(0, 100));
-       break;
-     case "Rejected":
-       response = await apiGet(`/bid/get-dealer-bid/reject/${dealerId}`);
-       allOffers.value = await mapApiData(response.data.slice(0, 100));
-       break;
-     case "Countered":
-       response = await apiGet(`/bid/get-dealer-bid/counter/${dealerId}`);
-       allOffers.value = await mapCounteredNewApiData(response.data.slice(0, 100));
-       break;
-   }
- };
+const getAllOffers = async (tab) => {
+  let response;
+  let dealerId = JSON.parse(localStorage.getItem("auth")).user._id;
+  switch (tab) {
+    case "All Offers":
+      response = await apiGet("/bid/all-bid");
+      allOffers.value = await mapAllOffersApiData(response.data.slice(0, 100));
+      break;
+    case "Accepted":
+      response = await apiGet(`/bid/get-dealer-bid/accept/${dealerId}`);
+      allOffers.value = await mapApiData(response.data.slice(0, 100));
+      break;
+    case "Rejected":
+      response = await apiGet(`/bid/get-dealer-bid/reject/${dealerId}`);
+      allOffers.value = await mapApiData(response.data.slice(0, 100));
+      break;
+    case "Countered":
+      response = await apiGet(`/bid/get-dealer-bid/counter/${dealerId}`);
+      allOffers.value = await mapCounteredNewApiData(response.data.slice(0, 100));
+      break;
+  }
+};
 
- const mapApiData = async (apiResponse) => {
-   // Extract user IDs for credit score lookup
-   const userIds = apiResponse
-     .map((item) => {
-       // Handle both string and object user IDs for customerDetails.userId
-       if (item.customerDetails?.userId) {
-         if (typeof item.customerDetails.userId === 'string') {
-           return item.customerDetails.userId;
-         } else if (item.customerDetails.userId._id) {
-           return item.customerDetails.userId._id;
-         } else if (item.customerDetails.userId.$oid) {
-           return item.customerDetails.userId.$oid;
-         }
-       }
-       return null;
-     })
-     .filter((id) => id)
-     .map((id) => String(id));
- 
-   // Fetch credit scores for all users
-   let creditScores = {};
-   if (userIds.length > 0) {
-     try {
-       creditScores = await getMultipleUserCreditScores(userIds);
-     } catch (error) {
-       console.error("Error fetching credit scores:", error);
-     }
-   }
+const mapApiData = async (apiResponse) => {
+  // Extract user IDs for credit score lookup
+  const userIds = apiResponse
+    .map((item) => {
+      // Handle both string and object user IDs for customerDetails.userId
+      if (item.customerDetails?.userId) {
+        if (typeof item.customerDetails.userId === "string") {
+          return item.customerDetails.userId;
+        } else if (item.customerDetails.userId._id) {
+          return item.customerDetails.userId._id;
+        } else if (item.customerDetails.userId.$oid) {
+          return item.customerDetails.userId.$oid;
+        }
+      }
+      return null;
+    })
+    .filter((id) => id)
+    .map((id) => String(id));
 
-   return apiResponse.map((item) => {
-     // Get the first user offer from negotiation history to extract bid details
-     const userOffer = item.negotiationHistory?.find((h) => h.type === "user_offer");
-     const bidId = userOffer?.bidId ? String(userOffer.bidId) : null;
-     
-     // Extract userId properly - handle both string and object formats
-     let userId = null;
-     if (item.customerDetails?.userId) {
-       if (typeof item.customerDetails.userId === 'string') {
-         userId = item.customerDetails.userId;
-       } else if (item.customerDetails.userId._id) {
-         userId = item.customerDetails.userId._id;
-       } else if (item.customerDetails.userId.$oid) {
-         userId = item.customerDetails.userId.$oid;
-       }
-     }
-     userId = userId ? String(userId) : null;
-     
-     const userCreditScore = creditScores[userId] || { hasCreditScore: false, creditScoreTier: null };
- 
-     return {
+  // Fetch credit scores for all users
+  let creditScores = {};
+  if (userIds.length > 0) {
+    try {
+      creditScores = await getMultipleUserCreditScores(userIds);
+    } catch (error) {
+      console.error("Error fetching credit scores:", error);
+    }
+  }
+
+  return apiResponse.map((item) => {
+    // Get the first user offer from negotiation history to extract bid details
+    const userOffer = item.negotiationHistory?.find((h) => h.type === "user_offer");
+    const bidId = userOffer?.bidId ? String(userOffer.bidId) : null;
+
+    // Extract userId properly - handle both string and object formats
+    let userId = null;
+    if (item.customerDetails?.userId) {
+      if (typeof item.customerDetails.userId === "string") {
+        userId = item.customerDetails.userId;
+      } else if (item.customerDetails.userId._id) {
+        userId = item.customerDetails.userId._id;
+      } else if (item.customerDetails.userId.$oid) {
+        userId = item.customerDetails.userId.$oid;
+      }
+    }
+    userId = userId ? String(userId) : null;
+
+    const userCreditScore = creditScores[userId] || { hasCreditScore: false, creditScoreTier: null };
+
+    return {
       bidId: bidId || item.id,
       image: item.image || "",
       model: item.carname || "",
@@ -446,47 +446,47 @@ function findLatestUserBidId(history = []) {
   return lastUserOffer?.bidId || "";
 }
 
- const mapCounteredNewApiData = async (apiResponse) => {
-   const dealerId = JSON.parse(localStorage.getItem("auth") || "{}")?.user?._id || "";
+const mapCounteredNewApiData = async (apiResponse) => {
+  const dealerId = JSON.parse(localStorage.getItem("auth") || "{}")?.user?._id || "";
 
-   // Extract user IDs for credit score lookup
-   const userIds = (apiResponse || [])
-     .map((item) => {
-       // Handle both string and object user IDs for customerDetails.userId
-       if (item.customerDetails?.userId) {
-         if (typeof item.customerDetails.userId === 'string') {
-           return item.customerDetails.userId;
-         } else if (item.customerDetails.userId._id) {
-           return item.customerDetails.userId._id;
-         } else if (item.customerDetails.userId.$oid) {
-           return item.customerDetails.userId.$oid;
-         }
-       }
-       return null;
-     })
-     .filter((id) => id)
-     .map((id) => String(id));
+  // Extract user IDs for credit score lookup
+  const userIds = (apiResponse || [])
+    .map((item) => {
+      // Handle both string and object user IDs for customerDetails.userId
+      if (item.customerDetails?.userId) {
+        if (typeof item.customerDetails.userId === "string") {
+          return item.customerDetails.userId;
+        } else if (item.customerDetails.userId._id) {
+          return item.customerDetails.userId._id;
+        } else if (item.customerDetails.userId.$oid) {
+          return item.customerDetails.userId.$oid;
+        }
+      }
+      return null;
+    })
+    .filter((id) => id)
+    .map((id) => String(id));
 
-   // Fetch credit scores for all users
-   let creditScores = {};
-   if (userIds.length > 0) {
-     try {
-       creditScores = await getMultipleUserCreditScores(userIds);
-     } catch (error) {
-       console.error("Error fetching credit scores:", error);
-     }
-   }
+  // Fetch credit scores for all users
+  let creditScores = {};
+  if (userIds.length > 0) {
+    try {
+      creditScores = await getMultipleUserCreditScores(userIds);
+    } catch (error) {
+      console.error("Error fetching credit scores:", error);
+    }
+  }
 
   return (apiResponse || []).map((item) => {
     const bidId = findLatestUserBidId(item.negotiationHistory);
     const customerFirst = item.customerDetails?.firstName || "";
     const customerLast = item.customerDetails?.lastName || "";
     const displayName = customerFirst || customerLast ? `${customerFirst} ${customerLast}`.trim() : item.customerDetails?.email || "";
-    
+
     // Extract userId properly - handle both string and object formats
     let userId = null;
     if (item.customerDetails?.userId) {
-      if (typeof item.customerDetails.userId === 'string') {
+      if (typeof item.customerDetails.userId === "string") {
         userId = item.customerDetails.userId;
       } else if (item.customerDetails.userId._id) {
         userId = item.customerDetails.userId._id;
@@ -495,7 +495,7 @@ function findLatestUserBidId(history = []) {
       }
     }
     userId = userId ? String(userId) : null;
-    
+
     const userCreditScore = creditScores[userId] || { hasCreditScore: false, creditScoreTier: null };
 
     return {
@@ -551,55 +551,51 @@ const getSelectedOptionsText = (variants) => {
     .join(", ");
 };
 
- const mapAllOffersApiData = async (apiResponse) => {
-   // Extract user IDs for credit score lookup
-   const userIds = apiResponse
-     .map((item) => {
-       // Handle both string and object user IDs
-       if (typeof item.userId === 'string') {
-         return item.userId;
-       } else if (item.userId && typeof item.userId === 'object' && item.userId._id) {
-         return item.userId._id;
-       } else if (item.userId && typeof item.userId === 'object' && item.userId.$oid) {
-         return item.userId.$oid;
-       }
-       return null;
-     })
-     .filter((id) => id)
-     .map((id) => String(id));
- 
-   // Fetch credit scores for all users
-   let creditScores = {};
-   if (userIds.length > 0) {
-     try {
-       console.log('🔍 [mapAllOffersApiData] Fetching credit scores for user IDs:', userIds);
-       creditScores = await getMultipleUserCreditScores(userIds);
-       console.log('🔍 [mapAllOffersApiData] Credit scores response:', creditScores);
-     } catch (error) {
-       console.error("Error fetching credit scores:", error);
-     }
-   }
+const mapAllOffersApiData = async (apiResponse) => {
+  // Extract user IDs for credit score lookup
+  const userIds = apiResponse
+    .map((item) => {
+      // Handle both string and object user IDs
+      if (typeof item.userId === "string") {
+        return item.userId;
+      } else if (item.userId && typeof item.userId === "object" && item.userId._id) {
+        return item.userId._id;
+      } else if (item.userId && typeof item.userId === "object" && item.userId.$oid) {
+        return item.userId.$oid;
+      }
+      return null;
+    })
+    .filter((id) => id)
+    .map((id) => String(id));
+
+  // Fetch credit scores for all users
+  let creditScores = {};
+  if (userIds.length > 0) {
+    try {
+      creditScores = await getMultipleUserCreditScores(userIds);
+    } catch (error) {
+      console.error("Error fetching credit scores:", error);
+    }
+  }
 
   return apiResponse.map((item) => {
     // This endpoint returns userbids with different field names
     // Use _id as bidId since this is the userbid ID
     const bidId = item._id ? String(item._id) : null;
-    
+
     // Extract userId properly - handle both string and object formats
     let userId = null;
-    if (typeof item.userId === 'string') {
+    if (typeof item.userId === "string") {
       userId = item.userId;
-    } else if (item.userId && typeof item.userId === 'object' && item.userId._id) {
+    } else if (item.userId && typeof item.userId === "object" && item.userId._id) {
       userId = item.userId._id;
-    } else if (item.userId && typeof item.userId === 'object' && item.userId.$oid) {
+    } else if (item.userId && typeof item.userId === "object" && item.userId.$oid) {
       userId = item.userId.$oid;
     }
     userId = userId ? String(userId) : null;
-    
+
     const userCreditScore = creditScores[userId] || { hasCreditScore: false, creditScoreTier: null };
-    
-    console.log('🔍 [mapAllOffersApiData] Processing customer:', item.userName, 'UserID:', userId, 'Credit Score:', userCreditScore);
- 
+
     return {
       bidId: bidId,
       image: item.carImage || "",
