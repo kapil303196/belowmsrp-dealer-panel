@@ -361,24 +361,33 @@ const getAllOffers = async (tab) => {
 }
 
 const mapApiData = (apiResponse) => {
-    return apiResponse.map(item => ({
-        bidId: item.bidId?._id || item.bidId || item._id,
-        image: item.bidId?.carImage || '',
-        model: `${item.bidId?.carMaker || ''} ${item.bidId?.carName || ''}`.trim(),
-        price: `$${Number(item.bidId?.carMsrp || 0).toLocaleString()}.00`,
-        customer: {
-            name: item.userId?.fullName || '',
-            email: item.userId?.email || '',
-            phone: '',
-            creditScore: item.userId?.creditScore ?? 0
-        },
-        userOffer: Number(item.bidId?.carBid || 0).toLocaleString(),
-        comments: item.bidId?.userComments || '',
-        status: mapDealerActionToStatus(item.dealerAction),
-        userId: item.userId?._id || item.userId || '',
-        dealerId: JSON.parse(localStorage.getItem('auth') || '{}')?.user?._id || '',
-        carId: item.bidId?.carId?._id || item.bidId?.carId || item.carId || ''
-    }));
+    return apiResponse.map(item => {
+        // Get the first user offer from negotiation history to extract bid details
+        const userOffer = item.negotiationHistory?.find(h => h.type === 'user_offer');
+        const bidId = userOffer?.bidId ? String(userOffer.bidId) : null;
+        
+        return {
+            bidId: bidId || item.id,
+            image: item.image || '',
+            model: item.carname || '',
+            price: `$${Number(item.msrp || 0).toLocaleString()}.00`,
+            customer: {
+                name: item.customerDetails?.firstName && item.customerDetails?.lastName 
+                    ? `${item.customerDetails.firstName} ${item.customerDetails.lastName}`
+                    : item.customerDetails?.email || "Unknown Customer",
+                email: item.customerDetails?.email || '',
+                phone: item.customerDetails?.phoneNumber || '',
+                creditScore: item.customerDetails?.creditScore ?? 0
+            },
+            userOffer: Number(item.latestUserOffer || 0).toLocaleString(),
+            comments: item.latestUserComments || '',
+            status: item.status || mapDealerActionToStatus(item.dealerAction),
+            userId: item.customerDetails?.userId || '',
+            dealerId: JSON.parse(localStorage.getItem('auth') || '{}')?.user?._id || '',
+            carId: item.id || '',
+            selectedOptions: getSelectedOptionsText(item.userVariants || [])
+        };
+    });
 }
 
 function findLatestUserBidId(history = []) {
@@ -430,26 +439,50 @@ const mapDealerActionToStatus = (dealerAction) => {
     }
 }
 
+const getSelectedOptionsText = (variants) => {
+    if (!variants || !Array.isArray(variants) || variants.length === 0) {
+        return 'No options selected';
+    }
+    
+    // If variants are just IDs (strings), return a generic message
+    if (variants.length > 0 && typeof variants[0] === 'string') {
+        return `${variants.length} option(s) selected`;
+    }
+    
+    // If variants are objects with details, format them properly
+    return variants.map(variant => {
+        const price = variant.price && parseFloat(variant.price) > 0 ? ` (+$${parseFloat(variant.price).toLocaleString()})` : ' (Included)';
+        return `${variant.typeSubCategory || variant.mainCategory || variant.subCategory || 'Unknown Option'}${price}`;
+    }).join(', ');
+}
+
 const mapAllOffersApiData = (apiResponse) => {
     console.log('apiResponse', apiResponse)
-    return apiResponse.map(item => ({
-        bidId: item._id,
-        image: item.carImage || '',
-        model: `${item.carMaker} ${item.carName}`,
-        price: `$${Number(item.carMsrp).toLocaleString()}.00`,
-        customer: {
-            name: item.userName,
-            email: item.userEmail,
-            phone: '', // Backend doesn't provide phone in your example
-            creditScore: item.userId?.creditScore ?? 0
-        },
-        userOffer: Number(item.carBid).toLocaleString(),
-        comments: item.userComments || '',
-        status: item.status || '', // Add if status exists in backend or set a default
-        userId: item.userId?._id || item.userId || '',
-        dealerId: JSON.parse(localStorage.getItem('auth') || '{}')?.user?._id || '',
-        carId: item.carId?._id || item.carId || ''
-    }));
+    return apiResponse.map(item => {
+        // This endpoint returns userbids with different field names
+        // Use _id as bidId since this is the userbid ID
+        const bidId = item._id ? String(item._id) : null;
+        
+        return {
+            bidId: bidId,
+            image: item.carImage || '',
+            model: item.carName || '',
+            price: `$${Number(item.carMsrp || 0).toLocaleString()}.00`,
+            customer: {
+                name: item.userName || "Unknown Customer",
+                email: item.userEmail || '',
+                phone: '',
+                creditScore: 0
+            },
+            userOffer: Number(item.carBid || 0).toLocaleString(),
+            comments: item.userComments || '',
+            status: 'All Offers',
+            userId: item.userId ? String(item.userId) : '',
+            dealerId: JSON.parse(localStorage.getItem('auth') || '{}')?.user?._id || '',
+            carId: item.carId ? String(item.carId) : '',
+            selectedOptions: getSelectedOptionsText(item.variants || [])
+        };
+    });
 }
 
 
@@ -463,12 +496,20 @@ const downloadingIds = ref(new Set())
 const isDownloading = (offer) => downloadingIds.value.has(offer.bidId)
 const downloadPdf = async (offer) => {
     try {
-        const bidId = offer.bidId
-        if (!bidId) return
+        const bidId = offer.bidId || offer._id || offer.id
+        console.log('Downloading PDF for bidId:', bidId)
+        console.log('Full offer object:', offer)
+        if (!bidId) {
+            console.error('No bidId found for offer:', offer)
+            alert('Cannot download PDF: No valid bid ID found for this offer.')
+            return
+        }
         downloadingIds.value.add(bidId)
+        console.log('Fetching PDF from API...')
         // GET blob
         const blob = await apiGetBlob(`/bid/user-bid/${bidId}/pdf`)
-        const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }))
+        console.log('PDF blob received:', blob)
+        const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
         link.download = `bid-${bidId}.pdf`
@@ -476,8 +517,10 @@ const downloadPdf = async (offer) => {
         link.click()
         link.remove()
         window.URL.revokeObjectURL(url)
+        console.log('PDF download initiated successfully')
     } catch (e) {
         console.error('Failed to download PDF', e)
+        alert('Failed to download PDF. Please try again.')
     } finally {
         const bidId = offer.bidId || offer._id
         downloadingIds.value.delete(bidId)
