@@ -203,14 +203,18 @@ function goToPage(page) {
 
 // API call to get accepted offers
 const { apiGet } = useApi();
+const { getMultipleUserCreditScores } = useCreditScore();
 
 const getAcceptedOffers = async () => {
   try {
     isLoading.value = true;
     const dealerId = JSON.parse(localStorage.getItem("auth")).user._id;
     const response = await apiGet(`/bid/get-dealer-bid/accept/${dealerId}`);
-    console.log("response", response.data);
-    allOffers.value = mapApiData(response.data);
+    console.log('🔍 [Accepted] API Response:', response.data);
+    if (response.data && response.data.length > 0) {
+      console.log('🔍 [Accepted] First item customerDetails:', response.data[0].customerDetails);
+    }
+    allOffers.value = await mapApiData(response.data);
   } catch (error) {
     console.error("Error fetching accepted offers:", error);
   } finally {
@@ -237,11 +241,63 @@ const getSelectedOptionsText = (variants) => {
     .join(", ");
 };
 
-const mapApiData = (apiResponse) => {
+const mapApiData = async (apiResponse) => {
+  // Extract user IDs for credit score lookup
+  const userIds = apiResponse
+    .map((item) => {
+      // Handle both string and object user IDs for customerDetails.userId
+      if (item.customerDetails?.userId) {
+        if (typeof item.customerDetails.userId === 'string') {
+          return item.customerDetails.userId;
+        } else if (item.customerDetails.userId._id) {
+          return item.customerDetails.userId._id;
+        } else if (item.customerDetails.userId.$oid) {
+          return item.customerDetails.userId.$oid;
+        }
+      }
+      return null;
+    })
+    .filter((id) => id)
+    .map((id) => String(id));
+
+  // Fetch credit scores for all users
+  let creditScores = {};
+  if (userIds.length > 0) {
+    try {
+      creditScores = await getMultipleUserCreditScores(userIds);
+    } catch (error) {
+      console.error("Error fetching credit scores:", error);
+    }
+  }
+
   return apiResponse.map((item) => {
     // Get the first user offer from negotiation history to extract bid details
     const userOffer = item.negotiationHistory?.find((h) => h.type === "user_offer");
     const bidId = userOffer?.bidId ? String(userOffer.bidId) : null;
+
+    // Extract userId properly - handle both string and object formats
+    let userId = null;
+    if (item.customerDetails?.userId) {
+      if (typeof item.customerDetails.userId === 'string') {
+        userId = item.customerDetails.userId;
+      } else if (item.customerDetails.userId._id) {
+        userId = item.customerDetails.userId._id;
+      } else if (item.customerDetails.userId.$oid) {
+        userId = item.customerDetails.userId.$oid;
+      }
+    }
+    userId = userId ? String(userId) : null;
+
+    const userCreditScore = creditScores[userId] || { hasCreditScore: false, creditScoreTier: null };
+
+    console.log('🔍 [Accepted mapApiData] Processing item:', {
+      customerDetails: item.customerDetails,
+      firstName: item.customerDetails?.firstName,
+      lastName: item.customerDetails?.lastName,
+      email: item.customerDetails?.email,
+      phoneNumber: item.customerDetails?.phoneNumber,
+      userId: userId
+    });
 
     return {
       image: item.image || "",
@@ -253,7 +309,7 @@ const mapApiData = (apiResponse) => {
           item.customerDetails?.firstName && item.customerDetails?.lastName ? `${item.customerDetails.firstName} ${item.customerDetails.lastName}` : item.customerDetails?.email || "Unknown Customer",
         email: item.customerDetails?.email || "",
         phone: item.customerDetails?.phoneNumber || "",
-        creditScore: item.customerDetails?.creditScore ?? 0,
+        creditScore: userCreditScore.hasCreditScore ? userCreditScore.creditScoreTier : "Not Available",
       },
       location: "13th Street 47 ",
       userOffer: Number(item.latestUserOffer || 0).toLocaleString(),
@@ -263,7 +319,7 @@ const mapApiData = (apiResponse) => {
       status: item.status || "Accepted",
       bidId: bidId,
       carId: item.id,
-      userId: item.customerDetails?.userId || "",
+      userId: userId || "",
       dealerId: JSON.parse(localStorage.getItem("auth") || "{}")?.user?._id || "",
     };
   });

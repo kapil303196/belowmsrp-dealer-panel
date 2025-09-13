@@ -250,6 +250,7 @@ function goToPage(page) {
 
 // API call to get countered offers
 const { apiGet, apiGetBlob } = useApi();
+const { getMultipleUserCreditScores } = useCreditScore();
 
 // Add action methods for dealers
 const { apiPost } = useApi();
@@ -343,12 +344,7 @@ const getCounteredOffers = async () => {
     isLoading.value = true;
     const dealerId = JSON.parse(localStorage.getItem("auth")).user._id;
     const response = await apiGet(`/bid/get-dealer-bid/counter/${dealerId}`);
-    console.log("response", response.data);
-    console.log(
-      "Mapped offers with userAction:",
-      response.data.map((item) => ({ dealerAction: item.dealerAction, userAction: item.userAction }))
-    );
-    allOffers.value = mapApiData(response.data);
+    allOffers.value = await mapApiData(response.data);
   } catch (error) {
     console.error("Error fetching countered offers:", error);
   } finally {
@@ -362,17 +358,13 @@ const isDownloading = (offer) => downloadingIds.value.has(offer.bidId || offer._
 const downloadPdf = async (offer) => {
   try {
     const bidId = offer.bidId || offer._id || offer.id;
-    console.log('Downloading PDF for bidId:', bidId);
-    console.log('Full offer object:', offer);
     if (!bidId) {
-      console.error('No bidId found for offer:', offer);
-      alert('Cannot download PDF: No valid bid ID found for this offer.');
+      console.error("No bidId found for offer:", offer);
+      alert("Cannot download PDF: No valid bid ID found for this offer.");
       return;
     }
     downloadingIds.value.add(bidId);
-    console.log('Fetching PDF from API...');
     const blob = await apiGetBlob(`/bid/user-bid/${bidId}/pdf`);
-    console.log('PDF blob received:', blob);
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -381,10 +373,9 @@ const downloadPdf = async (offer) => {
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
-    console.log('PDF download initiated successfully');
   } catch (e) {
     console.error("Failed to download PDF", e);
-    alert('Failed to download PDF. Please try again.');
+    alert("Failed to download PDF. Please try again.");
   } finally {
     const bidId = offer.bidId || offer._id;
     downloadingIds.value.delete(bidId);
@@ -437,7 +428,35 @@ function findLatestUserBidId(history = []) {
   return lastUserOffer?.bidId || "";
 }
 
-const mapApiData = (apiResponse) => {
+const mapApiData = async (apiResponse) => {
+  // Extract user IDs for credit score lookup
+  const userIds = (apiResponse || [])
+    .map((item) => {
+      // Handle both string and object user IDs for customerDetails.userId
+      if (item.customerDetails?.userId) {
+        if (typeof item.customerDetails.userId === 'string') {
+          return item.customerDetails.userId;
+        } else if (item.customerDetails.userId._id) {
+          return item.customerDetails.userId._id;
+        } else if (item.customerDetails.userId.$oid) {
+          return item.customerDetails.userId.$oid;
+        }
+      }
+      return null;
+    })
+    .filter((id) => id)
+    .map((id) => String(id));
+
+  // Fetch credit scores for all users
+  let creditScores = {};
+  if (userIds.length > 0) {
+    try {
+      creditScores = await getMultipleUserCreditScores(userIds);
+    } catch (error) {
+      console.error("Error fetching credit scores:", error);
+    }
+  }
+
   return (apiResponse || []).map((item) => {
     const flags = parseLatestFlagsFromStatus(item.status);
     const dealerAction = deriveDealerActionFromHistory(item.negotiationHistory);
@@ -450,6 +469,22 @@ const mapApiData = (apiResponse) => {
     const customerEmail = item.customerDetails?.email || "";
     const customerPhone = item.customerDetails?.phoneNumber || "";
     const displayName = customerFirst || customerLast ? `${customerFirst} ${customerLast}`.trim() : customerEmail || "";
+    
+    // Extract userId properly - handle both string and object formats
+    let userId = null;
+    if (item.customerDetails?.userId) {
+      if (typeof item.customerDetails.userId === 'string') {
+        userId = item.customerDetails.userId;
+      } else if (item.customerDetails.userId._id) {
+        userId = item.customerDetails.userId._id;
+      } else if (item.customerDetails.userId.$oid) {
+        userId = item.customerDetails.userId.$oid;
+      }
+    }
+    userId = userId ? String(userId) : null;
+
+    const userCreditScore = creditScores[userId] || { hasCreditScore: false, creditScoreTier: null };
+
     return {
       image: item.image || "",
       model,
@@ -457,7 +492,9 @@ const mapApiData = (apiResponse) => {
       price: `$${Number(item.msrp || 0).toLocaleString()}.00`,
       customer: {
         name: displayName,
-        creditScore: 0,
+        email: customerEmail,
+        phone: customerPhone,
+        creditScore: userCreditScore.hasCreditScore ? userCreditScore.creditScoreTier : "Not Available",
       },
       userOffer: Number(item.latestUserOffer || 0).toLocaleString(),
       counterOffer: Number(item.latestDealerOffer || 0).toLocaleString(),
@@ -466,7 +503,7 @@ const mapApiData = (apiResponse) => {
       DealerComments: item.latestDealerComments || "",
       // Do not default a status; if empty/null, UI should hide it
       status: item.status || "",
-      userId: "",
+      userId: userId || "",
       carId: item.id || "",
       bidId,
       userAction,

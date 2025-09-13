@@ -344,7 +344,6 @@ const getAllOffers = async () => {
   try {
     isLoading.value = true;
     const response = await apiGet("/bid/all-bid");
-    console.log("response", response.data);
     allOffers.value = mapAllOffersApiData(response.data);
   } catch (error) {
     console.error("Error fetching all offers:", error);
@@ -386,7 +385,6 @@ const getSelectedOptionsArray = (selectedOptionsText) => {
 };
 
 const mapAllOffersApiData = (apiResponse) => {
-  console.log("apiResponse", apiResponse);
   return apiResponse.map((item) => {
     // This endpoint returns userbids with different field names
     // Use _id as bidId since this is the userbid ID
@@ -464,17 +462,13 @@ const isDownloading = (offer) => downloadingIds.value.has(offer.bidId);
 const downloadPdf = async (offer) => {
   try {
     const bidId = offer.bidId || offer._id || offer.id;
-    console.log("Downloading PDF for bidId:", bidId);
-    console.log("Full offer object:", offer);
     if (!bidId) {
       console.error("No bidId found for offer:", offer);
       alert("Cannot download PDF: No valid bid ID found for this offer.");
       return;
     }
     downloadingIds.value.add(bidId);
-    console.log("Fetching PDF from API...");
     const blob = await apiGetBlob(`/bid/user-bid/${bidId}/pdf`);
-    console.log("PDF blob received:", blob);
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -483,7 +477,6 @@ const downloadPdf = async (offer) => {
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
-    console.log("PDF download initiated successfully");
   } catch (e) {
     console.error("Failed to download PDF", e);
     alert("Failed to download PDF. Please try again.");
