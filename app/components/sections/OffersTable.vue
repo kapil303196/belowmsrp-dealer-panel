@@ -88,6 +88,12 @@
             </th>
             <th class="px-[14px] py-2 font-normal">
               <button>
+                Selected Options
+                <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
+              </button>
+            </th>
+            <th class="px-[14px] py-2 font-normal">
+              <button>
                 Actions
                 <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
               </button>
@@ -116,6 +122,11 @@
             </td>
             <td class="px-[14px] py-2 text-sm font-medium">${{ offer.userOffer }}</td>
             <td class="px-[14px] py-2 text-sm">{{ offer.comments }}</td>
+            <td class="px-[14px] py-2 text-sm">
+              <div v-for="(option, index) in getSelectedOptionsArray(offer.selectedOptions)" :key="index" class="mb-1">
+                {{ option }}
+              </div>
+            </td>
             <td class="px-[14px] py-2 rounded-r-[10px]">
               <div class="flex items-center gap-1">
                 <button
@@ -204,6 +215,16 @@
             <div class="flex justify-between rounded-lg border-none bg-white p-2">
               <span class="text-[#081735] opacity-55">User Offer:</span>
               <span class="font-semibold">${{ offer.userOffer }}</span>
+            </div>
+          </div>
+        </div>
+        <!-- Selected Options -->
+        <div class="text-sm text-primary mb-2 font-medium text-[15px]">
+          <p class="text-sm text-primary pb-2 font-medium">Selected Options</p>
+          <span class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
+          <div class="flex flex-col gap-0.5">
+            <div v-for="(option, index) in getSelectedOptionsArray(offer.selectedOptions)" :key="index" class="py-[6px]">
+              <span class="text-[#081735] opacity-75">{{ option }}</span>
             </div>
           </div>
         </div>
@@ -435,7 +456,9 @@ const mapApiData = async (apiResponse) => {
       userId: userId || "",
       dealerId: JSON.parse(localStorage.getItem("auth") || "{}")?.user?._id || "",
       carId: item.id || "",
-      selectedOptions: getSelectedOptionsText(item.userVariants || []),
+      selectedOptions: (() => {
+        return getSelectedOptionsText(item.userVariants || []);
+      })(),
     };
   });
 };
@@ -515,6 +538,7 @@ const mapCounteredNewApiData = async (apiResponse) => {
       userId: userId || "",
       dealerId,
       carId: item.id || "",
+      selectedOptions: getSelectedOptionsText(item.userVariants || []),
     };
   });
 };
@@ -543,12 +567,26 @@ const getSelectedOptionsText = (variants) => {
   }
 
   // If variants are objects with details, format them properly
-  return variants
+  const result = variants
     .map((variant) => {
       const price = variant.price && parseFloat(variant.price) > 0 ? ` (+$${parseFloat(variant.price).toLocaleString()})` : " (Included)";
       return `${variant.typeSubCategory || variant.mainCategory || variant.subCategory || "Unknown Option"}${price}`;
     })
     .join(", ");
+  return result;
+};
+
+// Helper function to convert selected options string to array for better display
+const getSelectedOptionsArray = (selectedOptionsText) => {
+  if (!selectedOptionsText || selectedOptionsText === "No options selected") {
+    return ["No options selected"];
+  }
+
+  // Split by comma and clean up each option
+  return selectedOptionsText
+    .split(",")
+    .map((option) => option.trim())
+    .filter((option) => option.length > 0);
 };
 
 const mapAllOffersApiData = async (apiResponse) => {
@@ -612,7 +650,12 @@ const mapAllOffersApiData = async (apiResponse) => {
       status: "All Offers",
       userId: userId || "",
       dealerId: JSON.parse(localStorage.getItem("auth") || "{}")?.user?._id || "",
-      carId: item.carId ? String(item.carId) : "",
+      carId: (() => {
+        if (!item.carId) return "";
+        if (typeof item.carId === "string") return item.carId;
+        if (typeof item.carId === "object" && item.carId._id) return String(item.carId._id);
+        return String(item.carId);
+      })(),
       selectedOptions: getSelectedOptionsText(item.variants || []),
     };
   });

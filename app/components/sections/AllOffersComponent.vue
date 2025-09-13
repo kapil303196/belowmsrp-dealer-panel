@@ -187,6 +187,16 @@
             </div>
           </div>
         </div>
+        <!-- Selected Options -->
+        <div class="text-sm text-primary mb-2 font-medium text-[15px]">
+          <p class="text-sm text-primary pb-2 font-medium">Selected Options</p>
+          <span class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
+          <div class="flex flex-col gap-0.5">
+            <div v-for="(option, index) in getSelectedOptionsArray(offer.selectedOptions)" :key="index" class="py-[6px]">
+              <span class="text-[#081735] opacity-75">{{ option }}</span>
+            </div>
+          </div>
+        </div>
         <!-- Action buttons at bottom -->
         <div class="flex items-center gap-2 center mt-[14px]">
           <button
@@ -404,7 +414,12 @@ const mapAllOffersApiData = (apiResponse) => {
       },
       userId: item.userId ? String(item.userId) : "",
       dealerId: JSON.parse(localStorage.getItem("auth") || "{}")?.user?._id || "",
-      carId: item.carId ? String(item.carId) : "",
+      carId: (() => {
+        if (!item.carId) return "";
+        if (typeof item.carId === "string") return item.carId;
+        if (typeof item.carId === "object" && item.carId._id) return String(item.carId._id);
+        return String(item.carId);
+      })(),
       location: "13th Street 47",
       userOffer: Number(item.carBid || 0).toLocaleString(),
       msrp: Number(item.carMsrp || 0).toLocaleString(),
