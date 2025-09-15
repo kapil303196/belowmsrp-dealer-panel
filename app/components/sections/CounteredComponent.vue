@@ -79,7 +79,7 @@
         <div v-if="offer.dealerAction === 'user-counter' && !isOfferAccepted(offer) && !isOfferRejected(offer)" class="flex gap-2 mt-3">
           <button @click="acceptUserCounter(offer)" class="flex-1 px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 action-btn">Accept</button>
           <button @click="rejectUserCounter(offer)" class="flex-1 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 action-btn">Reject</button>
-          <button @click="counterUserBid(offer)" class="flex-1 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 action-btn">Counter</button>
+          <button @click="openCounterModal(offer)" class="flex-1 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 action-btn">Counter</button>
         </div>
         <div v-else-if="isOfferAccepted(offer)" class="text-green-600 text-xs mt-3 text-center"><i class="fas fa-check-circle me-1"></i> Deal Closed</div>
         <div v-else-if="isOfferRejected(offer)" class="text-red-600 text-xs mt-3 text-center"><i class="fas fa-times-circle me-1"></i> Deal Closed</div>
@@ -171,7 +171,7 @@
                 <button @click="rejectUserCounter(offer)" class="relative w-[38px] h-10 border border-[#D53660] rounded-lg flex items-center justify-center flex-none">
                   <img src="../../assets/images/icons/cross-icon.svg" alt="icon" class="w-5 h-5" />
                 </button>
-                <button @click="counterUserBid(offer)" class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none">
+                <button @click="openCounterModal(offer)" class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none">
                   <img src="../../assets/images/icons/equal-icon.svg" alt="icon" class="w-5 h-5" />
                 </button>
                 <button @click="downloadPdf(offer)" class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none">
@@ -189,6 +189,43 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- Counter Modal -->
+    <div v-if="showCounter" class="fixed inset-0 z-[100] flex items-center justify-center">
+      <div class="absolute inset-0 bg-black/30" @click="closeCounter"></div>
+      <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-xl mx-4 p-6">
+        <div class="flex items-start justify-between mb-4">
+          <h3 class="text-xl font-semibold text-primary">Counter User Bid</h3>
+          <button class="text-primary/60 hover:text-primary" @click="closeCounter">✕</button>
+        </div>
+        <form @submit.prevent="submitCounter">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-primary mb-1">Counter Bid *</label>
+              <input v-model="form.counterBid" type="number" min="0" required placeholder="Enter Counter bid" class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-primary mb-1">Attachment (optional)</label>
+              <div class="w-full h-12 rounded-lg border border-[#DBE4F2] flex items-center px-2">
+                <button type="button" @click="fileInput && fileInput.click()" class="px-4 py-2 rounded-md bg-secondary text-white text-sm h-9">Choose File</button>
+                <span class="ml-3 text-primary/80 truncate">{{ fileName || "No file chosen" }}</span>
+              </div>
+              <input ref="fileInputRef" @change="onFileChange" type="file" accept="*/*" class="hidden" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-primary mb-1">Comments</label>
+              <textarea v-model="form.dealerComments" rows="4" placeholder="Enter Your Comments here" class="w-full px-3 py-2 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"></textarea>
+            </div>
+          </div>
+          <div class="mt-6 flex justify-end">
+            <button :disabled="isSubmitting" class="px-4 py-2 rounded-md bg-secondary text-white text-sm h-10 disabled:opacity-50">
+              <span v-if="isSubmitting" class="inline-flex items-center">Submitting...</span>
+              <span v-else>Submit</span>
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <!-- Pagination Controls -->
@@ -249,7 +286,7 @@ function goToPage(page) {
 }
 
 // API call to get countered offers
-const { apiGet, apiGetBlob } = useApi();
+const { apiGet, apiGetBlob, apiPostForm } = useApi();
 const { getMultipleUserCreditScores } = useCreditScore();
 
 // Add action methods for dealers
@@ -297,45 +334,61 @@ const rejectUserCounter = async (offer) => {
   }
 };
 
-const counterUserBid = async (offer) => {
+// Counter modal state
+const showCounter = ref(false);
+const isSubmitting = ref(false);
+const currentOffer = ref(null);
+const form = ref({ counterBid: "", dealerComments: "", file: null });
+const fileName = ref("");
+const fileInputRef = ref(null);
+const fileInput = computed(() => fileInputRef.value);
+
+function openCounterModal(offer) {
+  currentOffer.value = offer;
+  form.value = { counterBid: "", dealerComments: "", file: null };
+  fileName.value = "";
+  showCounter.value = true;
+}
+function closeCounter() {
+  if (isSubmitting.value) return;
+  showCounter.value = false;
+}
+function onFileChange(e) {
+  const files = e.target.files;
+  form.value.file = files && files.length ? files[0] : null;
+  fileName.value = form.value.file ? form.value.file.name : "";
+}
+
+const submitCounter = async () => {
+  if (!currentOffer.value) return;
   try {
+    isSubmitting.value = true;
     const dealerId = JSON.parse(localStorage.getItem("auth")).user._id;
-    if (!dealerId || !offer?.carId || !offer?.bidId) {
+    if (!dealerId || !currentOffer.value?.carId || !currentOffer.value?.bidId) {
       await Swal.fire("Missing data", "Cannot counter: required identifiers are missing.", "warning");
+      isSubmitting.value = false;
       return;
     }
-    const { value: formValues } = await Swal.fire({
-      title: "Counter Offer",
-      html:
-        '<input id="swal-input-amount" class="swal2-input" placeholder="Counter amount" type="number" min="0" step="1">' +
-        '<input id="swal-input-comment" class="swal2-input" placeholder="Comments (optional)">',
-      focusConfirm: false,
-      preConfirm: () => {
-        const amount = document.getElementById("swal-input-amount").value;
-        const comment = document.getElementById("swal-input-comment").value;
-        if (!amount) {
-          Swal.showValidationMessage("Please enter a counter amount");
-          return;
-        }
-        return { amount, comment };
-      },
-    });
-    if (!formValues) return;
-    const payload = {
-      dealerId,
-      carId: offer.carId,
-      bidId: offer.bidId,
-      dealerAction: "counter",
-      counterBid: formValues.amount,
-      dealerComments: formValues.comment,
-    };
-    if (offer?.userId) payload.userId = offer.userId;
-    await apiPost("/bid/dealer-bid-counter", payload);
+    const fd = new FormData();
+    fd.append("dealerId", dealerId);
+    if (currentOffer.value?.userId) fd.append("userId", currentOffer.value.userId);
+    fd.append("carId", currentOffer.value.carId);
+    fd.append("bidId", currentOffer.value.bidId);
+    fd.append("dealerAction", "counter");
+    fd.append("counterBid", String(form.value.counterBid || ""));
+    fd.append("dealerComments", form.value.dealerComments || "");
+    fd.append("options", "[]");
+    if (form.value.file) fd.append("file0", form.value.file);
+
+    await apiPostForm("/bid/dealer-bid-counter", fd);
     await getCounteredOffers();
+    showCounter.value = false;
     Swal.fire("Success!", "Counter Offer Sent", "success");
   } catch (error) {
-    console.error("Error countering user bid:", error);
+    console.error("Error submitting counter bid:", error);
     Swal.fire("Error!", "Failed to send counter offer", "error");
+  } finally {
+    isSubmitting.value = false;
   }
 };
 
