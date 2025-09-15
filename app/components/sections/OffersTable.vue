@@ -109,7 +109,7 @@
                   <img :src="offer.image" class="w-[71px] h-12 rounded object-cover" />
                   <div>
                     <div class="text-[13px] font-medium text-primary">{{ offer.model }}</div>
-                    <div class="text-[13px] font-medium text-primary opacity-50">{{ offer.price }}</div>
+                    <div class="text-[13px] font-medium text-primary">{{ offer.price }}</div>
                   </div>
                 </div>
               </div>
@@ -177,7 +177,7 @@
             <img :src="offer.image" class="w-[71px] h-12 rounded object-cover" />
             <div>
               <div class="text-[13px] font-medium text-primary">{{ offer.model }}</div>
-              <div class="text-[13px] font-medium text-primary opacity-50">{{ offer.price }}</div>
+              <div class="text-[13px] font-medium text-primary">{{ offer.price }}</div>
             </div>
           </div>
           <button class="ml-auto flex-shrink-0 w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center" @click="downloadPdf(offer)">
