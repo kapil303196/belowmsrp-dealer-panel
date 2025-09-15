@@ -9,7 +9,7 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "prebuild": "nuxt build",
-    "deploy:prod": "cp .env.prod .env && nuxt generate && firebase deploy --only hosting"
+    "deploy": "cp .env.prod .env && nuxt generate && firebase deploy --only hosting"
   },
   "dependencies": {
     "@nuxt/icon": "^1.15.0",
