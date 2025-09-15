@@ -282,12 +282,12 @@
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-primary mb-1">File *</label>
+              <label class="block text-sm font-medium text-primary mb-1">Attachment (optional)</label>
               <div class="w-full h-12 rounded-lg border border-[#DBE4F2] flex items-center px-2">
                 <button type="button" @click="fileInput && fileInput.click()" class="px-4 py-2 rounded-md bg-secondary text-white text-sm h-9">Choose File</button>
                 <span class="ml-3 text-primary/80 truncate">{{ fileName || "No file chosen" }}</span>
               </div>
-              <input ref="fileInputRef" @change="onFileChange" type="file" required accept="image/*,application/pdf" class="hidden" />
+              <input ref="fileInputRef" @change="onFileChange" type="file" accept="*/*" class="hidden" />
             </div>
             <div>
               <label class="block text-sm font-medium text-primary mb-1">Comments</label>
