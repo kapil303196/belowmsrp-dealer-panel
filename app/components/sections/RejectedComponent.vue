@@ -103,8 +103,6 @@
             </td>
             <td class="px-[14px] py-2 whitespace-pre-line text-sm">
               <div>Name: {{ offer.customer.name }}</div>
-              <div>Email: {{ offer.customer.email }}</div>
-              <div>Phone: {{ offer.customer.phone }}</div>
               <div>Credit Score: {{ offer.customer.creditScore }}</div>
             </td>
             <!-- Location cell removed -->
