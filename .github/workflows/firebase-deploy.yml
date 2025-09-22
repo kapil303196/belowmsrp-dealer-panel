@@ -31,9 +31,9 @@ jobs:
       - name: Install Firebase CLI
         run: npm i -g firebase-tools
 
-      - name: Deploy to Firebase Hosting
+      - name: Deploy to Firebase Hosting (uses firebase.json)
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-        run: firebase deploy --only hosting --project belowmsrp-dealer-panel --non-interactive
+        run: firebase deploy --only hosting --non-interactive --config firebase.json
 
 
