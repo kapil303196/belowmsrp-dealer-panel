@@ -87,8 +87,6 @@
             </td>
             <td class="px-[14px] py-2 whitespace-pre-line text-sm">
               <div>Name: {{ offer.customer.name }}</div>
-              <div>Email: {{ offer.customer.email }}</div>
-              <div>Phone: {{ offer.customer.phone }}</div>
               <div>Credit Score: {{ offer.customer.creditScore }}</div>
             </td>
             <td class="px-[14px] py-2 text-sm">{{ offer.location }}</td>
@@ -162,11 +160,6 @@
             <div class="flex justify-between py-[6px]">
               <span class="text-[#081735] opacity-55">Name:</span>
               <span>{{ offer.customer.name }}</span>
-            </div>
-            <span class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
-            <div class="flex justify-between py-[6px]">
-              <span class="text-[#081735] opacity-55">Email:</span>
-              <span>{{ offer.customer.email }}</span>
             </div>
             <span class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
             <div class="flex justify-between py-[6px]">
@@ -329,7 +322,7 @@ const filteredOffers = computed(() => {
     const matchesModel = !modelFilter || (o.brand || "").toLowerCase() === modelFilter;
     if (!matchesModel) return false;
     if (!s) return true;
-    const hay = `${o.model} ${o.customer?.name || ""} ${o.customer?.email || ""} ${o.userOffer || ""} ${o.comments || ""}`.toLowerCase();
+    const hay = `${o.model} ${o.customer?.name || ""} ${o.userOffer || ""} ${o.comments || ""}`.toLowerCase();
     return hay.includes(s);
   });
 });
