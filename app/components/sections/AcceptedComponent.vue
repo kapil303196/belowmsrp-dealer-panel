@@ -258,7 +258,7 @@ const mapApiData = async (apiResponse) => {
   return apiResponse.map((item) => {
     // Get the first user offer from negotiation history to extract bid details
     const userOffer = item.negotiationHistory?.find((h) => h.type === "user_offer");
-    const bidId = normalizeId(userOffer.bidId);
+    const bidId = userOffer?.bidId ? normalizeId(userOffer.bidId) : null;
 
     // Extract userId properly - handle both string and object formats
     const userId = item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null;
