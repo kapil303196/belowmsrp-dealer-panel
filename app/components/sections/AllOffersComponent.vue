@@ -125,7 +125,7 @@
                   </svg>
                   <img v-else src="../../assets/images/icons/cross-icon.svg" alt="icon" class="w-5 h-5" />
                 </button>
-                <button @click="downloadPdf(offer)" class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none">
+                <button @click="previewPdf(offer)" class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none" title="Preview PDF">
                   <svg v-if="isDownloading(offer)" class="animate-spin h-5 w-5 text-primary" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
@@ -342,6 +342,7 @@ function goToPage(page) {
 
 // API call to get all offers
 const { apiGet, apiPost, apiPostForm, apiGetBlob } = useApi();
+import { openBlobInNewTab } from "~/composables/useBlobPreview";
 import { normalizeId } from "~/composables/useNormalizeId";
 
 const getAllOffers = async () => {
@@ -463,27 +464,20 @@ const isRejecting = (offer) => rejectingIds.value.has(offer.bidId);
 // PDF download
 const downloadingIds = ref(new Set());
 const isDownloading = (offer) => downloadingIds.value.has(offer.bidId);
-const downloadPdf = async (offer) => {
+const previewPdf = async (offer) => {
   try {
     const bidId = offer.bidId || offer._id || offer.id;
     if (!bidId) {
       console.error("No bidId found for offer:", offer);
-      alert("Cannot download PDF: No valid bid ID found for this offer.");
+      alert("Cannot preview PDF: No valid bid ID found for this offer.");
       return;
     }
     downloadingIds.value.add(bidId);
     const blob = await apiGetBlob(`/bid/user-bid/${bidId}/pdf`);
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `bid-${bidId}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
+    openBlobInNewTab(blob);
   } catch (e) {
-    console.error("Failed to download PDF", e);
-    alert("Failed to download PDF. Please try again.");
+    console.error("Failed to preview PDF", e);
+    alert("Failed to preview PDF. Please try again.");
   } finally {
     const bidId = offer.bidId || offer._id;
     downloadingIds.value.delete(bidId);
