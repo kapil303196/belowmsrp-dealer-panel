@@ -306,6 +306,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
+import { normalizeId } from "~/composables/useNormalizeId";
 const config = useRuntimeConfig();
 const filterOptions = ["This Week", "Last Week", "This Month"];
 const selectedFilter = ref("This Week");
@@ -379,19 +380,7 @@ const getAllOffers = async (tab) => {
 const mapApiData = async (apiResponse) => {
   // Extract user IDs for credit score lookup
   const userIds = apiResponse
-    .map((item) => {
-      // Handle both string and object user IDs for customerDetails.userId
-      if (item.customerDetails?.userId) {
-        if (typeof item.customerDetails.userId === "string") {
-          return item.customerDetails.userId;
-        } else if (item.customerDetails.userId._id) {
-          return item.customerDetails.userId._id;
-        } else if (item.customerDetails.userId.$oid) {
-          return item.customerDetails.userId.$oid;
-        }
-      }
-      return null;
-    })
+    .map((item) => (item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null))
     .filter((id) => id)
     .map((id) => String(id));
 
@@ -408,20 +397,10 @@ const mapApiData = async (apiResponse) => {
   return apiResponse.map((item) => {
     // Get the first user offer from negotiation history to extract bid details
     const userOffer = item.negotiationHistory?.find((h) => h.type === "user_offer");
-    const bidId = userOffer?.bidId ? String(userOffer.bidId) : null;
+    const bidId = userOffer?.bidId ? normalizeId(userOffer.bidId) : null;
 
     // Extract userId properly - handle both string and object formats
-    let userId = null;
-    if (item.customerDetails?.userId) {
-      if (typeof item.customerDetails.userId === "string") {
-        userId = item.customerDetails.userId;
-      } else if (item.customerDetails.userId._id) {
-        userId = item.customerDetails.userId._id;
-      } else if (item.customerDetails.userId.$oid) {
-        userId = item.customerDetails.userId.$oid;
-      }
-    }
-    userId = userId ? String(userId) : null;
+    const userId = item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null;
 
     const userCreditScore = creditScores[userId] || { hasCreditScore: false, creditScoreTier: null };
 
@@ -461,19 +440,7 @@ const mapCounteredNewApiData = async (apiResponse) => {
 
   // Extract user IDs for credit score lookup
   const userIds = (apiResponse || [])
-    .map((item) => {
-      // Handle both string and object user IDs for customerDetails.userId
-      if (item.customerDetails?.userId) {
-        if (typeof item.customerDetails.userId === "string") {
-          return item.customerDetails.userId;
-        } else if (item.customerDetails.userId._id) {
-          return item.customerDetails.userId._id;
-        } else if (item.customerDetails.userId.$oid) {
-          return item.customerDetails.userId.$oid;
-        }
-      }
-      return null;
-    })
+    .map((item) => (item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null))
     .filter((id) => id)
     .map((id) => String(id));
 
@@ -494,17 +461,7 @@ const mapCounteredNewApiData = async (apiResponse) => {
     const displayName = customerFirst || customerLast ? `${customerFirst} ${customerLast}`.trim() : item.customerDetails?.email || "";
 
     // Extract userId properly - handle both string and object formats
-    let userId = null;
-    if (item.customerDetails?.userId) {
-      if (typeof item.customerDetails.userId === "string") {
-        userId = item.customerDetails.userId;
-      } else if (item.customerDetails.userId._id) {
-        userId = item.customerDetails.userId._id;
-      } else if (item.customerDetails.userId.$oid) {
-        userId = item.customerDetails.userId.$oid;
-      }
-    }
-    userId = userId ? String(userId) : null;
+    const userId = item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null;
 
     const userCreditScore = creditScores[userId] || { hasCreditScore: false, creditScoreTier: null };
 
@@ -579,17 +536,7 @@ const getSelectedOptionsArray = (selectedOptionsText) => {
 const mapAllOffersApiData = async (apiResponse) => {
   // Extract user IDs for credit score lookup
   const userIds = apiResponse
-    .map((item) => {
-      // Handle both string and object user IDs
-      if (typeof item.userId === "string") {
-        return item.userId;
-      } else if (item.userId && typeof item.userId === "object" && item.userId._id) {
-        return item.userId._id;
-      } else if (item.userId && typeof item.userId === "object" && item.userId.$oid) {
-        return item.userId.$oid;
-      }
-      return null;
-    })
+    .map((item) => (item.userId ? normalizeId(item.userId) : null))
     .filter((id) => id)
     .map((id) => String(id));
 
@@ -609,15 +556,7 @@ const mapAllOffersApiData = async (apiResponse) => {
     const bidId = item._id ? String(item._id) : null;
 
     // Extract userId properly - handle both string and object formats
-    let userId = null;
-    if (typeof item.userId === "string") {
-      userId = item.userId;
-    } else if (item.userId && typeof item.userId === "object" && item.userId._id) {
-      userId = item.userId._id;
-    } else if (item.userId && typeof item.userId === "object" && item.userId.$oid) {
-      userId = item.userId.$oid;
-    }
-    userId = userId ? String(userId) : null;
+    const userId = normalizeId(item.userId) || null;
 
     const userCreditScore = creditScores[userId] || { hasCreditScore: false, creditScoreTier: null };
 
@@ -702,8 +641,8 @@ const acceptBid = async (offer) => {
     const payload = {
       userId: offer.userId,
       dealerId: offer.dealerId,
-      carId: typeof carIdRaw === "object" && carIdRaw?._id ? carIdRaw._id : carIdRaw,
-      bidId: typeof bidIdRaw === "object" && bidIdRaw?._id ? bidIdRaw._id : bidIdRaw,
+      carId: normalizeId(carIdRaw),
+      bidId: normalizeId(bidIdRaw),
       dealerAction: "accept",
     };
     await apiPost("/bid/dealer-bid-action", payload);
@@ -727,8 +666,8 @@ const rejectBid = async (offer) => {
     const payload = {
       userId: offer.userId,
       dealerId: offer.dealerId,
-      carId: typeof carIdRaw === "object" && carIdRaw?._id ? carIdRaw._id : carIdRaw,
-      bidId: typeof bidIdRaw === "object" && bidIdRaw?._id ? bidIdRaw._id : bidIdRaw,
+      carId: normalizeId(carIdRaw),
+      bidId: normalizeId(bidIdRaw),
       dealerAction: "reject",
     };
     await apiPost("/bid/dealer-bid-action", payload);

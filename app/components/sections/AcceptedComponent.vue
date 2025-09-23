@@ -153,6 +153,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { normalizeId } from "~/composables/useNormalizeId";
 
 const dropdownOpen = ref(null);
 function toggleDropdown(type) {
@@ -240,19 +241,7 @@ const getSelectedOptionsText = (variants) => {
 const mapApiData = async (apiResponse) => {
   // Extract user IDs for credit score lookup
   const userIds = apiResponse
-    .map((item) => {
-      // Handle both string and object user IDs for customerDetails.userId
-      if (item.customerDetails?.userId) {
-        if (typeof item.customerDetails.userId === "string") {
-          return item.customerDetails.userId;
-        } else if (item.customerDetails.userId._id) {
-          return item.customerDetails.userId._id;
-        } else if (item.customerDetails.userId.$oid) {
-          return item.customerDetails.userId.$oid;
-        }
-      }
-      return null;
-    })
+    .map((item) => (item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null))
     .filter((id) => id)
     .map((id) => String(id));
 
@@ -269,20 +258,10 @@ const mapApiData = async (apiResponse) => {
   return apiResponse.map((item) => {
     // Get the first user offer from negotiation history to extract bid details
     const userOffer = item.negotiationHistory?.find((h) => h.type === "user_offer");
-    const bidId = userOffer?.bidId ? String(userOffer.bidId) : null;
+    const bidId = normalizeId(userOffer.bidId);
 
     // Extract userId properly - handle both string and object formats
-    let userId = null;
-    if (item.customerDetails?.userId) {
-      if (typeof item.customerDetails.userId === "string") {
-        userId = item.customerDetails.userId;
-      } else if (item.customerDetails.userId._id) {
-        userId = item.customerDetails.userId._id;
-      } else if (item.customerDetails.userId.$oid) {
-        userId = item.customerDetails.userId.$oid;
-      }
-    }
-    userId = userId ? String(userId) : null;
+    const userId = item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null;
 
     const userCreditScore = creditScores[userId] || { hasCreditScore: false, creditScoreTier: null };
 

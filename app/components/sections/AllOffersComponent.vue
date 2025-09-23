@@ -342,6 +342,7 @@ function goToPage(page) {
 
 // API call to get all offers
 const { apiGet, apiPost, apiPostForm, apiGetBlob } = useApi();
+import { normalizeId } from "~/composables/useNormalizeId";
 
 const getAllOffers = async () => {
   try {
@@ -405,14 +406,9 @@ const mapAllOffersApiData = (apiResponse) => {
         phone: "",
         creditScore: 0,
       },
-      userId: item.userId ? String(item.userId) : "",
+      userId: item?.userId ? normalizeId(item.userId) : null,
       dealerId: JSON.parse(localStorage.getItem("auth") || "{}")?.user?._id || "",
-      carId: (() => {
-        if (!item.carId) return "";
-        if (typeof item.carId === "string") return item.carId;
-        if (typeof item.carId === "object" && item.carId._id) return String(item.carId._id);
-        return String(item.carId);
-      })(),
+      carId: item.carId ? normalizeId(item.carId) : null,
       location: "13th Street 47",
       userOffer: Number(item.carBid || 0).toLocaleString(),
       msrp: Number(item.carMsrp || 0).toLocaleString(),

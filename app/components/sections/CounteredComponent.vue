@@ -203,7 +203,14 @@
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-primary mb-1">Counter Bid *</label>
-              <input v-model="form.counterBid" type="number" min="0" required placeholder="Enter Counter bid" class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40" />
+              <input
+                v-model="form.counterBid"
+                type="number"
+                min="0"
+                required
+                placeholder="Enter Counter bid"
+                class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
             </div>
             <div>
               <label class="block text-sm font-medium text-primary mb-1">Attachment (optional)</label>
@@ -215,7 +222,12 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-primary mb-1">Comments</label>
-              <textarea v-model="form.dealerComments" rows="4" placeholder="Enter Your Comments here" class="w-full px-3 py-2 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"></textarea>
+              <textarea
+                v-model="form.dealerComments"
+                rows="4"
+                placeholder="Enter Your Comments here"
+                class="w-full px-3 py-2 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"
+              ></textarea>
             </div>
           </div>
           <div class="mt-6 flex justify-end">
@@ -236,6 +248,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useApi } from "~/composables/useApi";
+import { normalizeId } from "~/composables/useNormalizeId";
 import Swal from "sweetalert2";
 
 const dropdownOpen = ref(null);
@@ -484,19 +497,7 @@ function findLatestUserBidId(history = []) {
 const mapApiData = async (apiResponse) => {
   // Extract user IDs for credit score lookup
   const userIds = (apiResponse || [])
-    .map((item) => {
-      // Handle both string and object user IDs for customerDetails.userId
-      if (item.customerDetails?.userId) {
-        if (typeof item.customerDetails.userId === 'string') {
-          return item.customerDetails.userId;
-        } else if (item.customerDetails.userId._id) {
-          return item.customerDetails.userId._id;
-        } else if (item.customerDetails.userId.$oid) {
-          return item.customerDetails.userId.$oid;
-        }
-      }
-      return null;
-    })
+    .map((item) => (item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null))
     .filter((id) => id)
     .map((id) => String(id));
 
@@ -522,19 +523,8 @@ const mapApiData = async (apiResponse) => {
     const customerEmail = item.customerDetails?.email || "";
     const customerPhone = item.customerDetails?.phoneNumber || "";
     const displayName = customerFirst || customerLast ? `${customerFirst} ${customerLast}`.trim() : customerEmail || "";
-    
-    // Extract userId properly - handle both string and object formats
-    let userId = null;
-    if (item.customerDetails?.userId) {
-      if (typeof item.customerDetails.userId === 'string') {
-        userId = item.customerDetails.userId;
-      } else if (item.customerDetails.userId._id) {
-        userId = item.customerDetails.userId._id;
-      } else if (item.customerDetails.userId.$oid) {
-        userId = item.customerDetails.userId.$oid;
-      }
-    }
-    userId = userId ? String(userId) : null;
+
+    const userId = item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null;
 
     const userCreditScore = creditScores[userId] || { hasCreditScore: false, creditScoreTier: null };
 
