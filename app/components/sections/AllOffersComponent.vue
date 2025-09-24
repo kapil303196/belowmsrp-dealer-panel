@@ -285,6 +285,24 @@
         </form>
       </div>
     </div>
+
+    <!-- Attachment Preview Modal -->
+    <div v-if="showPreviewModal" class="fixed inset-0 z-[100] flex items-center justify-center">
+      <div class="absolute inset-0 bg-black/50" @click="closePreview"></div>
+      <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-4xl mx-4 p-4 h-[80vh] flex flex-col">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-lg font-semibold text-primary">Attachment Preview</h3>
+          <button class="text-primary/60 hover:text-primary" @click="closePreview">✕</button>
+        </div>
+        <div class="flex-1 overflow-hidden rounded-md border border-[#E5EAF3] bg-[#F8FAFF]">
+          <img v-if="previewType.startsWith('image/')" :src="previewUrl" alt="attachment" class="w-full h-full object-contain" />
+          <iframe v-else :src="previewUrl" class="w-full h-full" />
+        </div>
+        <div class="mt-3 flex justify-end gap-2">
+          <button class="px-3 py-2 rounded-md bg-primary text-white text-sm" @click="closePreview">Close</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -342,7 +360,7 @@ function goToPage(page) {
 
 // API call to get all offers
 const { apiGet, apiPost, apiPostForm, apiGetBlob } = useApi();
-import { openBlobInNewTab } from "~/composables/useBlobPreview";
+// removed new-tab blob preview import
 import { normalizeId } from "~/composables/useNormalizeId";
 
 const getAllOffers = async () => {
@@ -474,7 +492,9 @@ const previewPdf = async (offer) => {
     }
     downloadingIds.value.add(bidId);
     const blob = await apiGetBlob(`/bid/user-bid/${bidId}/pdf`);
-    openBlobInNewTab(blob);
+    previewType.value = "application/pdf";
+    previewUrl.value = window.URL.createObjectURL(blob);
+    showPreviewModal.value = true;
   } catch (e) {
     console.error("Failed to preview PDF", e);
     alert("Failed to preview PDF. Please try again.");
@@ -549,6 +569,65 @@ const submitCounter = async () => {
     isSubmitting.value = false;
   }
 };
+
+const acting = ref(false);
+const isPreviewing = ref(false);
+const showPreviewModal = ref(false);
+const previewUrl = ref("");
+const previewType = ref("");
+
+async function previewAttachments(offer) {
+  if (isPreviewing.value) return;
+  isPreviewing.value = true;
+  const list = Array.isArray(offer?.originalBid?.dealerBids)
+    ? offer.originalBid.dealerBids
+    : [];
+  // Find the latest dealer bid that has at least one attachment
+  const sorted = [...list].sort(
+    (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+  );
+  const latestWithImages = [...sorted]
+    .reverse()
+    .find((b) => Array.isArray(b?.images) && b.images.length > 0);
+  if (!latestWithImages) {
+    isPreviewing.value = false;
+    return;
+  }
+  const images = latestWithImages.images.filter((u) => typeof u === "string" && u);
+  if (!images.length) {
+    isPreviewing.value = false;
+    return;
+  }
+  // Take the last image in that latest bid as the most recent attachment
+  const url = images[images.length - 1];
+  try {
+    const token = localStorage.getItem("token");
+    const resp = await fetch(
+      `${API_BASE_URL}/bid/user-attachment-download?url=${encodeURIComponent(url)}`,
+      { headers: token ? { authtoken: token } : {} }
+    );
+    const contentType = resp.headers.get("content-type") || "";
+    const blob = await resp.blob();
+    const objectUrl = window.URL.createObjectURL(blob);
+    previewType.value = contentType;
+    previewUrl.value = objectUrl;
+    showPreviewModal.value = true;
+  } catch (e) {
+    console.error("Failed to preview attachment", e);
+  }
+  isPreviewing.value = false;
+}
+
+function closePreview() {
+  try {
+    if (previewUrl.value) {
+      window.URL.revokeObjectURL(previewUrl.value);
+    }
+  } catch (_) {}
+  previewUrl.value = "";
+  previewType.value = "";
+  showPreviewModal.value = false;
+}
 
 onMounted(() => {
   getAllOffers();

@@ -178,7 +178,7 @@
               <div class="text-[13px] font-medium text-primary">{{ offer.price }}</div>
             </div>
           </div>
-          <button class="ml-auto flex-shrink-0 w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center" @click="downloadPdf(offer)">
+          <button class="ml-auto flex-shrink-0 w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center" @click="previewPdf(offer)">
             <svg v-if="isDownloading(offer)" class="animate-spin h-5 w-5 text-primary" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
@@ -301,13 +301,30 @@
         </form>
       </div>
     </div>
+
+    <!-- Attachment Preview Modal -->
+    <div v-if="showPreviewModal" class="fixed inset-0 z-[100] flex items-center justify-center">
+      <div class="absolute inset-0 bg-black/50" @click="closePreview"></div>
+      <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-4xl mx-4 p-4 h-[80vh] flex flex-col">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-lg font-semibold text-primary">Attachment Preview</h3>
+          <button class="text-primary/60 hover:text-primary" @click="closePreview">✕</button>
+        </div>
+        <div class="flex-1 overflow-hidden rounded-md border border-[#E5EAF3] bg-[#F8FAFF]">
+          <img v-if="previewType.startsWith('image/')" :src="previewUrl" alt="attachment" class="w-full h-full object-contain" />
+          <iframe v-else :src="previewUrl" class="w-full h-full" />
+        </div>
+        <div class="mt-3 flex justify-end gap-2">
+          <button class="px-3 py-2 rounded-md bg-primary text-white text-sm" @click="closePreview">Close</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import { normalizeId } from "~/composables/useNormalizeId";
-import { openBlobInNewTab } from "~/composables/useBlobPreview";
 const config = useRuntimeConfig();
 const filterOptions = ["This Week", "Last Week", "This Month"];
 const selectedFilter = ref("This Week");
@@ -596,6 +613,9 @@ const offers = computed(() => {
 // PDF download
 const downloadingIds = ref(new Set());
 const isDownloading = (offer) => downloadingIds.value.has(offer.bidId);
+const showPreviewModal = ref(false);
+const previewUrl = ref("");
+const previewType = ref("");
 const previewPdf = async (offer) => {
   try {
     const bidId = offer.bidId || offer._id || offer.id;
@@ -605,9 +625,10 @@ const previewPdf = async (offer) => {
       return;
     }
     downloadingIds.value.add(bidId);
-    // GET blob
     const blob = await apiGetBlob(`/bid/user-bid/${bidId}/pdf`);
-    openBlobInNewTab(blob);
+    previewType.value = "application/pdf";
+    previewUrl.value = window.URL.createObjectURL(blob);
+    showPreviewModal.value = true;
   } catch (e) {
     console.error("Failed to preview PDF", e);
     alert("Failed to preview PDF. Please try again.");
@@ -616,6 +637,15 @@ const previewPdf = async (offer) => {
     downloadingIds.value.delete(bidId);
   }
 };
+
+function closePreview() {
+  try {
+    if (previewUrl.value) window.URL.revokeObjectURL(previewUrl.value);
+  } catch (_) {}
+  previewUrl.value = "";
+  previewType.value = "";
+  showPreviewModal.value = false;
+}
 
 // Accept / Reject
 const acceptingIds = ref(new Set());
