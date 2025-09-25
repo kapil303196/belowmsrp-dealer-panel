@@ -8,7 +8,8 @@
       @blur="handleBlur"
       :placeholder="placeholder"
       :disabled="disabled"
-      class="form-control p-4 input-bg custom-input-auto"
+      
+      class="mt-2 w-full h-[46px] border bg-white border-border rounded-lg px-4 py-2 text-sm outline-secondary"
       autocomplete="off"
     />
     
