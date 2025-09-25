@@ -24,7 +24,7 @@
                         <label class="text-sm font-medium text-on-secondary">Employee Name *</label>
                         <div
                             class="relative w-full h-[46px] mt-2 border bg-white border-border rounded-lg px-4 pr-10 py-2 outline-secondary">
-                            <input v-model="form.employeeName" required type="text" placeholder="Enter employee name"
+                            <input v-model="form.fullName" required type="text" placeholder="Enter employee name"
                                 class="w-full h-full text-sm outline-none" />
                         </div>
                     </div>
@@ -135,7 +135,6 @@
                         Team access for employees
                     </li>
                 </ul>
-                <div class="text-primary-light text-sm">No trade-in details required during dealer signup.</div>
             </div>
         </div>
     </div>
@@ -152,7 +151,7 @@ const isShowPassword = ref(false)
 
 const form = reactive({
     dealershipName: '',
-    employeeName: '',
+    fullName: '',
     logoFile: null,
     logoPreview: '',
     address: '',
@@ -193,14 +192,14 @@ async function handleSubmit() {
     isSubmitting.value = true
     try {
         // Minimal client-side validation
-        if (!form.dealershipName || !form.employeeName || !form.address || !form.licenseNumber || !form.email || !form.phone || !form.password) {
+        if (!form.dealershipName || !form.fullName || !form.address || !form.licenseNumber || !form.email || !form.phone || !form.password) {
             throw new Error('Please fill in all required fields.')
         }
 
         const payload = {
             role: 'dealer',
             dealershipName: form.dealershipName,
-            employeeName: form.employeeName,
+            fullName: form.fullName,
             address: form.address,
             licenseNumber: form.licenseNumber,
             email: form.email,

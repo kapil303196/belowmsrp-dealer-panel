@@ -27,7 +27,14 @@
                 item.bg,
                 (item.alt === 'search' || item.alt === 'chat') ? 'max-md:hidden' : ''
             ]" @click="handleRightIconClick(item.alt)">
-                <img :src="item.icon" :alt="item.alt" />
+                <template v-if="item.alt === 'profile'">
+                    <div class="w-10 h-10 rounded-full bg-primary text-white text-sm font-semibold flex items-center justify-center select-none">
+                        {{ userInitials }}
+                    </div>
+                </template>
+                <template v-else>
+                    <img :src="item.icon" :alt="item.alt" />
+                </template>
             </button>
 
             <!-- Search Bar Dropdown -->
@@ -70,7 +77,6 @@ import counteredIcon from '~/assets/images/icons/countered-icon-header.svg';
 import searchIcon from '~/assets/images/icons/search.svg';
 import chatIcon from '~/assets/images/icons/chat-icon.svg';
 import notificationIcon from '~/assets/images/icons/notification-icon.svg';
-import profileIcon from '~/assets/images/icons/red-sport-car-logo.svg';
 import mainLogo from '~/assets/images/icons/main-logo.svg';
 
 const route = useRoute();
@@ -87,9 +93,10 @@ const rightIcons = [
     { icon: searchIcon, alt: 'search', bg: 'bg-[#E8EFFA]' },
     { icon: chatIcon, alt: 'chat', bg: 'bg-[#E8EFFA]' },
     { icon: notificationIcon, alt: 'notification', bg: 'bg-[#E8EFFA]' },
-    { icon: profileIcon, alt: 'profile', bg: 'bg-white' },
+    { icon: null, alt: 'profile', bg: 'bg-white' },
 ];
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 const headerDropdownRef = ref<HTMLElement | null>(null);
 const { authenticated, user, logout: authLogout } = useAuth();
@@ -141,4 +148,21 @@ function handleLogout() {
     closeAllDropdowns();
     router.push('/login');
 }
+
+const userInitials = computed(() => {
+    const nameOrEmail = (user.value?.name || user.value?.employeeName || user.value?.email || '').trim();
+    if (!nameOrEmail) return 'U';
+    let source = nameOrEmail;
+    if (source.includes('@')) {
+        source = source.split('@')[0];
+    }
+    const parts = source.split(/\s+/).filter(Boolean);
+    if (parts.length === 1) {
+        const p = parts[0];
+        const first = p.charAt(0);
+        const last = p.charAt(p.length - 1);
+        return (first + (last || '')).toUpperCase();
+    }
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+});
 </script>

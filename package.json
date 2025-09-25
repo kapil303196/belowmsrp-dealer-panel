@@ -9,7 +9,7 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "prebuild": "nuxt build",
-    "deploy:prod": "cp .env.prod .env && nuxt generate && firebase deploy --only hosting"
+    "deploy": "cp .env.prod .env && nuxt generate && firebase deploy --only hosting"
   },
   "dependencies": {
     "@nuxt/icon": "^1.15.0",
@@ -19,6 +19,7 @@
     "axios": "^1.11.0",
     "nuxt": "^4.0.1",
     "pinia": "^2.1.7",
+    "sweetalert2": "^11.22.5",
     "vue": "^3.5.18",
     "vue-router": "^4.5.1",
     "vue3-apexcharts": "^1.8.0"

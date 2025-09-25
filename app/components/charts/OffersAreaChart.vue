@@ -17,7 +17,7 @@
                     </div>
                 </div>
             </div>
-            <button>
+            <button @click="navigateToOffers" class="hover:opacity-80 transition-opacity">
                 <img src="~/assets/images/icons/arrow-up-right.svg" alt="">
             </button>
         </div>
@@ -127,6 +127,11 @@ onMounted(() => {
 onBeforeUnmount(() => {
     window.removeEventListener('click', handleClickOutside)
 })
+
+// Navigate to offers page
+const navigateToOffers = () => {
+    navigateTo('/offers');
+};
 
 // Main chart options (styled to match D3 example)
 const chartOptions = computed(() => ({

@@ -43,9 +43,9 @@ export const useApi = () => {
       const response = await $fetch(`${apiBaseUrl}${endpoint}`, {
         method: 'GET',
         headers: getAuthHeaders({ omitContentType: true }),
-        responseType: 'blob'
+        responseType: 'arrayBuffer'
       })
-      return response
+      return new Blob([response], { type: 'application/pdf' })
     } catch (error) {
       console.error('API GET (blob) Error:', error)
       throw error
