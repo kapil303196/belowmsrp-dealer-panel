@@ -45,9 +45,12 @@
                     <!-- Full Address -->
                     <div>
                         <label class="text-sm font-medium text-on-secondary">Full Address *</label>
-                        <textarea v-model="form.address" required rows="3" placeholder="Street, City, State, ZIP"
-                            class="mt-2 w-full border bg-white border-border rounded-lg px-4 py-2 text-sm outline-secondary"></textarea>
+                        <!-- <textarea v-model="form.address" required rows="3" placeholder="Street, City, State, ZIP"
+                            class="mt-2 w-full border bg-white border-border rounded-lg px-4 py-2 text-sm outline-secondary"></textarea> -->
+                        <CreditModalAddressInput v-model="form.address" placeholder="Start typing your address..."
+                            :disabled="loading" @addressSelected="handleAddressSelected" />
                     </div>
+
 
                     <!-- Dealer License Number -->
                     <div>
@@ -85,10 +88,10 @@
                         <label class="text-sm font-medium text-on-secondary">Password *</label>
                         <div
                             class="relative w-full h-[46px] mt-2 border bg-white border-border rounded-lg px-4 pr-10 py-2 outline-secondary">
-                            <input v-model="form.password" required type="password" placeholder="Enter password"
+                            <input v-model="form.password" required :type="isShowPassword ? 'text' : 'password'" placeholder="Enter password"
                                 class="w-full h-full text-sm outline-none" />
                             <img src="../../assets/images/icons/eye-password.svg" alt="icon"
-                                class="absolute top-1/2 right-4 -translate-y-1/2" />
+                                class="absolute top-1/2 right-4 -translate-y-1/2" @click="togglePass" />
                         </div>
                     </div>
 
@@ -139,10 +142,13 @@
 </template>
 
 <script setup>
+import CreditModalAddressInput from '../SeggestionInput/CreditModalAddressInput.vue'
+
 const isSubmitting = ref(false)
 const router = useRouter()
 const { authenticated, user } = useAuth()
 const { apiPost } = useApi()
+const isShowPassword = ref(false)
 
 const form = reactive({
     dealershipName: '',
@@ -165,6 +171,21 @@ function onLogoChange(e) {
         form.logoPreview = reader.result
     }
     reader.readAsDataURL(file)
+}
+
+const togglePass = () => {
+    isShowPassword.value = !isShowPassword.value
+}
+
+function handleAddressSelected(addressData) {
+  const { suggestion, details } = addressData;
+
+  console.log('handleAddressSelected: ', details);
+  
+  // Fill the form fields with the selected address details
+  if (details) {
+   form.address = details?.formattedAddress || ''
+  }
 }
 
 async function handleSubmit() {
