@@ -1,7 +1,6 @@
 import { ref, watch } from 'vue';
 import addressApi from '../api/address';
-  const config = useRuntimeConfig()
-  const apiBaseUrl = config.public.NUXT_PUBLIC_API_BASE_URL
+// Note: Avoid calling useRuntimeConfig() at module scope to ensure SSR/prerender safety
 
 /**
  * Composable for managing address autocomplete functionality
@@ -11,6 +10,8 @@ import addressApi from '../api/address';
  * @returns {Object} - Reactive state and methods for address autocomplete
  */
 export function useAddressAutocomplete(options = {}) {
+  const config = useRuntimeConfig()
+  const apiBaseUrl = config.public.NUXT_PUBLIC_API_BASE_URL
   
   const {
     debounceMs = 300,
