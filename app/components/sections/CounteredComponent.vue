@@ -196,7 +196,7 @@
       <div class="absolute inset-0 bg-black/30" @click="closeCounter"></div>
       <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-xl mx-4 p-6">
         <div class="flex items-start justify-between mb-4">
-          <h3 class="text-xl font-semibold text-primary">Counter User Bid</h3>
+          <h3 class="text-xl font-semibold text-primary">Counter User Offer</h3>
           <button class="text-primary/60 hover:text-primary" @click="closeCounter">✕</button>
         </div>
         <form @submit.prevent="submitCounter">
