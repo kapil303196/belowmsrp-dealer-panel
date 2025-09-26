@@ -268,6 +268,16 @@
                 class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"
               />
             </div>
+             <div>
+              <label class="block text-sm font-medium text-primary mb-1">Dealer's MSRP</label>
+              <input
+                v-model="form.dealerMsrp"
+                type="number"
+                min="0"
+                placeholder="Enter Dealer's MSRP"
+                class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </div>
             <div>
               <label class="block text-sm font-medium text-primary mb-1">Attachment (optional)</label>
               <div class="w-full h-12 rounded-lg border border-[#DBE4F2] flex items-center px-2">
@@ -707,14 +717,14 @@ const rejectBid = async (offer) => {
 const showCounter = ref(false);
 const isSubmitting = ref(false);
 const currentOffer = ref(null);
-const form = ref({ counterBid: "", dealerComments: "", file: null });
+const form = ref({ counterBid: "",dealerMsrp:"", dealerComments: "", file: null });
 const fileName = ref("");
 const fileInputRef = ref(null);
 const fileInput = computed(() => fileInputRef.value);
 
 function openCounterModal(offer) {
   currentOffer.value = offer;
-  form.value = { counterBid: "", dealerComments: "", file: null };
+  form.value = { counterBid: "",dealerMsrp:"", dealerComments: "", file: null };
   showCounter.value = true;
 }
 function closeCounter() {
@@ -757,6 +767,7 @@ const submitCounter = async () => {
     fd.append("bidId", bidId);
     fd.append("dealerAction", "counter");
     fd.append("counterBid", String(form.value.counterBid || ""));
+    fd.append("dealerMsrp", String(form.value.dealerMsrp || ""));
     fd.append("dealerComments", form.value.dealerComments || "");
     fd.append("userDetails", userDetails);
     fd.append("options", "[]");
