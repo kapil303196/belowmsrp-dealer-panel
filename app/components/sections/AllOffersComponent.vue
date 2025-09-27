@@ -53,7 +53,7 @@
             </th>
             <th class="px-[14px] py-2 font-normal">
               <button>
-                Car's MSRP
+                Car's Build MSRP
                 <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
               </button>
             </th>
@@ -254,24 +254,25 @@
         <form @submit.prevent="submitCounter">
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-primary mb-1">Counter Bid *</label>
+              <label class="block text-sm font-medium text-primary mb-1">Counter Offer *</label>
               <input
                 v-model="form.counterBid"
                 type="number"
                 min="0"
                 required
-                placeholder="Enter Counter bid"
+                placeholder="Enter Counter Offer"
                 class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"
               />
             </div>
-               <div>
-              <label class="block text-sm font-medium text-primary mb-1">Dealer's MSRP</label>
+            <div>
+              <label class="block text-sm font-medium text-primary mb-1">Dealer's Car MSRP *</label>
               <input
                 v-model="form.dealerMsrp"
                 type="number"
                 min="0"
-                placeholder="Enter Dealer's MSRP"
+                placeholder="Enter Dealer's Car MSRP"
                 class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"
+                required
               />
             </div>
             <div>
@@ -442,7 +443,12 @@ const mapAllOffersApiData = (apiResponse) => {
       brand: item.carMaker || "",
       price: `$${Number(item.carMsrp || 0).toLocaleString()}.00`,
       customer: {
-        name: item.userName || "Unknown Customer",
+        name: (() => {
+          if (!item.userName) return "Unknown Customer";
+          const nameParts = item.userName.trim().split(/\s+/);
+          if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+          return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
+        })(),
         email: item.userEmail || "",
         phone: "",
         creditScore: 0,
@@ -531,14 +537,14 @@ const previewPdf = async (offer) => {
 const showCounter = ref(false);
 const isSubmitting = ref(false);
 const currentOffer = ref(null);
-const form = ref({ counterBid: "",dealerMsrp:"", dealerComments: "", file: null });
+const form = ref({ counterBid: "", dealerMsrp: "", dealerComments: "", file: null });
 const fileName = ref("");
 const fileInputRef = ref(null);
 const fileInput = computed(() => fileInputRef.value);
 
 function openCounterModal(offer) {
   currentOffer.value = offer;
-  form.value = { counterBid: "",dealerMsrp:"", dealerComments: "", file: null };
+  form.value = { counterBid: "", dealerMsrp: "", dealerComments: "", file: null };
   showCounter.value = true;
 }
 function closeCounter() {
@@ -603,16 +609,10 @@ const previewType = ref("");
 async function previewAttachments(offer) {
   if (isPreviewing.value) return;
   isPreviewing.value = true;
-  const list = Array.isArray(offer?.originalBid?.dealerBids)
-    ? offer.originalBid.dealerBids
-    : [];
+  const list = Array.isArray(offer?.originalBid?.dealerBids) ? offer.originalBid.dealerBids : [];
   // Find the latest dealer bid that has at least one attachment
-  const sorted = [...list].sort(
-    (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
-  );
-  const latestWithImages = [...sorted]
-    .reverse()
-    .find((b) => Array.isArray(b?.images) && b.images.length > 0);
+  const sorted = [...list].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  const latestWithImages = [...sorted].reverse().find((b) => Array.isArray(b?.images) && b.images.length > 0);
   if (!latestWithImages) {
     isPreviewing.value = false;
     return;
@@ -626,10 +626,7 @@ async function previewAttachments(offer) {
   const url = images[images.length - 1];
   try {
     const token = localStorage.getItem("token");
-    const resp = await fetch(
-      `${API_BASE_URL}/bid/user-attachment-download?url=${encodeURIComponent(url)}`,
-      { headers: token ? { authtoken: token } : {} }
-    );
+    const resp = await fetch(`${API_BASE_URL}/bid/user-attachment-download?url=${encodeURIComponent(url)}`, { headers: token ? { authtoken: token } : {} });
     const contentType = resp.headers.get("content-type") || "";
     const blob = await resp.blob();
     const objectUrl = window.URL.createObjectURL(blob);
