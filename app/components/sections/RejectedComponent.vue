@@ -239,7 +239,13 @@ const mapApiData = async (apiResponse) => {
       price: `$${Number(item.msrp || 0).toLocaleString()}.00`,
       customer: {
         name:
-          item.customerDetails?.firstName && item.customerDetails?.lastName ? `${item.customerDetails.firstName} ${item.customerDetails.lastName}` : item.customerDetails?.email || "Unknown Customer",
+          item.customerDetails?.fullName ? 
+            (() => {
+              const nameParts = item.customerDetails.fullName.trim().split(/\s+/);
+              if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+              return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
+            })() : 
+            "Unknown Customer",
         email: item.customerDetails?.email || "",
         phone: item.customerDetails?.phoneNumber || "",
         creditScore: userCreditScore.hasCreditScore ? userCreditScore.creditScoreTier : "Not Available",

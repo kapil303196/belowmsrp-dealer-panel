@@ -529,11 +529,16 @@ const mapApiData = async (apiResponse) => {
     const bidId = findLatestUserBidId(item.negotiationHistory) ? String(findLatestUserBidId(item.negotiationHistory)) : null;
     const model = item.carname || "";
     const brand = (model || "").split(" ")[0] || "";
-    const customerFirst = item.customerDetails?.firstName || "";
-    const customerLast = item.customerDetails?.lastName || "";
+    const customerFullName = item.customerDetails?.fullName || "";
     const customerEmail = item.customerDetails?.email || "";
     const customerPhone = item.customerDetails?.phoneNumber || "";
-    const displayName = customerFirst || customerLast ? `${customerFirst} ${customerLast}`.trim() : customerEmail || "";
+    const displayName = customerFullName ? 
+      (() => {
+        const nameParts = customerFullName.trim().split(/\s+/);
+        if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+        return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
+      })() : 
+      "Unknown Customer";
 
     const userId = item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null;
 

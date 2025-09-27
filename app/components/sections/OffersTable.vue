@@ -439,7 +439,13 @@ const mapApiData = async (apiResponse) => {
       price: `$${Number(item.msrp || 0).toLocaleString()}.00`,
       customer: {
         name:
-          item.customerDetails?.firstName && item.customerDetails?.lastName ? `${item.customerDetails.firstName} ${item.customerDetails.lastName}` : item.customerDetails?.email || "Unknown Customer",
+          item.customerDetails?.fullName ? 
+            (() => {
+              const nameParts = item.customerDetails.fullName.trim().split(/\s+/);
+              if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+              return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
+            })() : 
+            "Unknown Customer",
         email: item.customerDetails?.email || "",
         phone: item.customerDetails?.phoneNumber || "",
         creditScore: userCreditScore.hasCreditScore ? userCreditScore.creditScoreTier : "Not Available",
@@ -484,9 +490,14 @@ const mapCounteredNewApiData = async (apiResponse) => {
 
   return (apiResponse || []).map((item) => {
     const bidId = findLatestUserBidId(item.negotiationHistory);
-    const customerFirst = item.customerDetails?.firstName || "";
-    const customerLast = item.customerDetails?.lastName || "";
-    const displayName = customerFirst || customerLast ? `${customerFirst} ${customerLast}`.trim() : item.customerDetails?.email || "";
+    const customerFullName = item.customerDetails?.fullName || "";
+    const displayName = customerFullName ? 
+      (() => {
+        const nameParts = customerFullName.trim().split(/\s+/);
+        if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+        return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
+      })() : 
+      "Unknown Customer";
 
     // Extract userId properly - handle both string and object formats
     const userId = item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null;
@@ -594,7 +605,12 @@ const mapAllOffersApiData = async (apiResponse) => {
       model: item.carName || "",
       price: `$${Number(item.carMsrp || 0).toLocaleString()}.00`,
       customer: {
-        name: item.userName || "Unknown Customer",
+        name: (() => {
+          if (!item.userName) return "Unknown Customer";
+          const nameParts = item.userName.trim().split(/\s+/);
+          if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+          return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
+        })(),
         email: item.userEmail || "",
         phone: "",
         creditScore: userCreditScore.hasCreditScore ? userCreditScore.creditScoreTier : "Not Available",
