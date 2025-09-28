@@ -98,8 +98,8 @@
             <td class="px-[14px] py-2 whitespace-pre-line text-sm">
               <div>Vehicle: {{ offer?.kpiData?.decodedVehicle?.make }} {{ offer?.kpiData?.decodedVehicle?.model }} {{ offer?.kpiData?.decodedVehicle?.year }}</div>
               <div>VIN: {{ offer?.kpiData?.request?.vin }}</div>
-              <div>Milage: {{ offer?.kpiData?.request?.mileage }}</div>
-              <div>Price Rance: {{ offer?.kpiData?.kbbValues?.goodCondition?.tradeIn?.lowRange }} - {{ offer?.kpiData?.kbbValues?.goodCondition?.tradeIn?.highRange }}</div>
+              <div>Mileage: {{ offer?.kpiData?.request?.mileage }}</div>
+              <div>Price Range: {{ offer?.kpiData?.kbbValues?.goodCondition?.tradeIn?.lowRange }} - {{ offer?.kpiData?.kbbValues?.goodCondition?.tradeIn?.highRange }}</div>
             </td>
             <td class="px-[14px] py-2 text-sm">{{ offer.location }}</td>
             <td class="px-[14px] py-2 text-sm font-medium">${{ offer.userOffer }}</td>
@@ -186,7 +186,7 @@
               <span class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
 
               <div class="flex justify-between border-none p-2 mt-1">
-                <span class="text-[#081735] opacity-55">Car's MSRP:</span>
+                <span class="text-[#081735] opacity-55">Your Build MSRP:</span>
                 <span class="font-semibold">${{ offer.msrp }}</span>
               </div>
             </div>

@@ -268,13 +268,13 @@
                 class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"
               />
             </div>
-             <div>
-              <label class="block text-sm font-medium text-primary mb-1">Dealer's MSRP</label>
+            <div>
+              <label class="block text-sm font-medium text-primary mb-1">Dealer’s Car MSRP</label>
               <input
                 v-model="form.dealerMsrp"
                 type="number"
                 min="0"
-                placeholder="Enter Dealer's MSRP"
+                placeholder="Enter Dealer’s Car MSRP"
                 class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"
               />
             </div>
@@ -438,14 +438,13 @@ const mapApiData = async (apiResponse) => {
       model: item.carname || "",
       price: `$${Number(item.msrp || 0).toLocaleString()}.00`,
       customer: {
-        name:
-          item.customerDetails?.fullName ? 
-            (() => {
+        name: item.customerDetails?.fullName
+          ? (() => {
               const nameParts = item.customerDetails.fullName.trim().split(/\s+/);
               if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
               return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
-            })() : 
-            "Unknown Customer",
+            })()
+          : "Unknown Customer",
         email: item.customerDetails?.email || "",
         phone: item.customerDetails?.phoneNumber || "",
         creditScore: userCreditScore.hasCreditScore ? userCreditScore.creditScoreTier : "Not Available",
@@ -491,13 +490,13 @@ const mapCounteredNewApiData = async (apiResponse) => {
   return (apiResponse || []).map((item) => {
     const bidId = findLatestUserBidId(item.negotiationHistory);
     const customerFullName = item.customerDetails?.fullName || "";
-    const displayName = customerFullName ? 
-      (() => {
-        const nameParts = customerFullName.trim().split(/\s+/);
-        if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
-        return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
-      })() : 
-      "Unknown Customer";
+    const displayName = customerFullName
+      ? (() => {
+          const nameParts = customerFullName.trim().split(/\s+/);
+          if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+          return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
+        })()
+      : "Unknown Customer";
 
     // Extract userId properly - handle both string and object formats
     const userId = item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null;
@@ -733,14 +732,14 @@ const rejectBid = async (offer) => {
 const showCounter = ref(false);
 const isSubmitting = ref(false);
 const currentOffer = ref(null);
-const form = ref({ counterBid: "",dealerMsrp:"", dealerComments: "", file: null });
+const form = ref({ counterBid: "", dealerMsrp: "", dealerComments: "", file: null });
 const fileName = ref("");
 const fileInputRef = ref(null);
 const fileInput = computed(() => fileInputRef.value);
 
 function openCounterModal(offer) {
   currentOffer.value = offer;
-  form.value = { counterBid: "",dealerMsrp:"", dealerComments: "", file: null };
+  form.value = { counterBid: "", dealerMsrp: "", dealerComments: "", file: null };
   showCounter.value = true;
 }
 function closeCounter() {
