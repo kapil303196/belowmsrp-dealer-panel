@@ -53,7 +53,7 @@
             </th>
             <th class="px-[14px] py-2 font-normal">
               <button>
-                Car's MSRP
+                Car's Build MSRP
                 <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
               </button>
             </th>
@@ -98,8 +98,8 @@
             <td class="px-[14px] py-2 whitespace-pre-line text-sm">
               <div>Vehicle: {{ offer?.kpiData?.decodedVehicle?.make }} {{ offer?.kpiData?.decodedVehicle?.model }} {{ offer?.kpiData?.decodedVehicle?.year }}</div>
               <div>VIN: {{ offer?.kpiData?.request?.vin }}</div>
-              <div>Milage: {{ offer?.kpiData?.request?.mileage }}</div>
-              <div>Price Rance: {{ offer?.kpiData?.kbbValues?.goodCondition?.tradeIn?.lowRange }} - {{ offer?.kpiData?.kbbValues?.goodCondition?.tradeIn?.highRange }}</div>
+              <div>Mileage: {{ offer?.kpiData?.request?.mileage }}</div>
+              <div>Price Range: {{ offer?.kpiData?.kbbValues?.goodCondition?.tradeIn?.lowRange }} - {{ offer?.kpiData?.kbbValues?.goodCondition?.tradeIn?.highRange }}</div>
             </td>
             <td class="px-[14px] py-2 text-sm">{{ offer.location }}</td>
             <td class="px-[14px] py-2 text-sm font-medium">${{ offer.userOffer }}</td>
@@ -186,7 +186,7 @@
               <span class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
 
               <div class="flex justify-between border-none p-2 mt-1">
-                <span class="text-[#081735] opacity-55">Car's MSRP:</span>
+                <span class="text-[#081735] opacity-55">Your Build MSRP:</span>
                 <span class="font-semibold">${{ offer.msrp }}</span>
               </div>
             </div>
@@ -254,14 +254,25 @@
         <form @submit.prevent="submitCounter">
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-primary mb-1">Counter Bid *</label>
+              <label class="block text-sm font-medium text-primary mb-1">Counter Offer *</label>
               <input
                 v-model="form.counterBid"
                 type="number"
                 min="0"
                 required
-                placeholder="Enter Counter bid"
+                placeholder="Enter Counter Offer"
                 class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-primary mb-1">Dealer's Car MSRP *</label>
+              <input
+                v-model="form.dealerMsrp"
+                type="number"
+                min="0"
+                placeholder="Enter Dealer's Car MSRP"
+                class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"
+                required
               />
             </div>
             <div>
@@ -432,7 +443,12 @@ const mapAllOffersApiData = (apiResponse) => {
       brand: item.carMaker || "",
       price: `$${Number(item.carMsrp || 0).toLocaleString()}.00`,
       customer: {
-        name: item.userName || "Unknown Customer",
+        name: (() => {
+          if (!item.userName) return "Unknown Customer";
+          const nameParts = item.userName.trim().split(/\s+/);
+          if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+          return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
+        })(),
         email: item.userEmail || "",
         phone: "",
         creditScore: 0,
@@ -521,14 +537,14 @@ const previewPdf = async (offer) => {
 const showCounter = ref(false);
 const isSubmitting = ref(false);
 const currentOffer = ref(null);
-const form = ref({ counterBid: "", dealerComments: "", file: null });
+const form = ref({ counterBid: "", dealerMsrp: "", dealerComments: "", file: null });
 const fileName = ref("");
 const fileInputRef = ref(null);
 const fileInput = computed(() => fileInputRef.value);
 
 function openCounterModal(offer) {
   currentOffer.value = offer;
-  form.value = { counterBid: "", dealerComments: "", file: null };
+  form.value = { counterBid: "", dealerMsrp: "", dealerComments: "", file: null };
   showCounter.value = true;
 }
 function closeCounter() {
@@ -566,6 +582,7 @@ const submitCounter = async () => {
     fd.append("bidId", bidId);
     fd.append("dealerAction", "counter");
     fd.append("counterBid", String(form.value.counterBid || ""));
+    fd.append("dealerMsrp", String(form.value.dealerMsrp || ""));
     fd.append("dealerComments", form.value.dealerComments || "");
     fd.append("userDetails", userDetails);
     fd.append("options", "[]");
@@ -592,16 +609,10 @@ const previewType = ref("");
 async function previewAttachments(offer) {
   if (isPreviewing.value) return;
   isPreviewing.value = true;
-  const list = Array.isArray(offer?.originalBid?.dealerBids)
-    ? offer.originalBid.dealerBids
-    : [];
+  const list = Array.isArray(offer?.originalBid?.dealerBids) ? offer.originalBid.dealerBids : [];
   // Find the latest dealer bid that has at least one attachment
-  const sorted = [...list].sort(
-    (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
-  );
-  const latestWithImages = [...sorted]
-    .reverse()
-    .find((b) => Array.isArray(b?.images) && b.images.length > 0);
+  const sorted = [...list].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  const latestWithImages = [...sorted].reverse().find((b) => Array.isArray(b?.images) && b.images.length > 0);
   if (!latestWithImages) {
     isPreviewing.value = false;
     return;
@@ -615,10 +626,7 @@ async function previewAttachments(offer) {
   const url = images[images.length - 1];
   try {
     const token = localStorage.getItem("token");
-    const resp = await fetch(
-      `${API_BASE_URL}/bid/user-attachment-download?url=${encodeURIComponent(url)}`,
-      { headers: token ? { authtoken: token } : {} }
-    );
+    const resp = await fetch(`${API_BASE_URL}/bid/user-attachment-download?url=${encodeURIComponent(url)}`, { headers: token ? { authtoken: token } : {} });
     const contentType = resp.headers.get("content-type") || "";
     const blob = await resp.blob();
     const objectUrl = window.URL.createObjectURL(blob);

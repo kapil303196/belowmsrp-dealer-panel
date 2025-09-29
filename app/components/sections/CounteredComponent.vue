@@ -213,6 +213,16 @@
               />
             </div>
             <div>
+              <label class="block text-sm font-medium text-primary mb-1">Dealer’s Car MSRP</label>
+              <input
+                v-model="form.dealerMsrp"
+                type="number"
+                min="0"
+                placeholder="Enter Dealer’s Car MSRP"
+                class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </div>
+            <div>
               <label class="block text-sm font-medium text-primary mb-1">Attachment (optional)</label>
               <div class="w-full h-12 rounded-lg border border-[#DBE4F2] flex items-center px-2">
                 <button type="button" @click="fileInput && fileInput.click()" class="px-4 py-2 rounded-md bg-secondary text-white text-sm h-9">Choose File</button>
@@ -351,14 +361,14 @@ const rejectUserCounter = async (offer) => {
 const showCounter = ref(false);
 const isSubmitting = ref(false);
 const currentOffer = ref(null);
-const form = ref({ counterBid: "", dealerComments: "", file: null });
+const form = ref({ counterBid: "", dealerMsrp: "", dealerComments: "", file: null });
 const fileName = ref("");
 const fileInputRef = ref(null);
 const fileInput = computed(() => fileInputRef.value);
 
 function openCounterModal(offer) {
   currentOffer.value = offer;
-  form.value = { counterBid: "", dealerComments: "", file: null };
+  form.value = { counterBid: "", dealerMsrp: "", dealerComments: "", file: null };
   fileName.value = "";
   showCounter.value = true;
 }
@@ -389,6 +399,7 @@ const submitCounter = async () => {
     fd.append("bidId", currentOffer.value.bidId);
     fd.append("dealerAction", "counter");
     fd.append("counterBid", String(form.value.counterBid || ""));
+    fd.append("dealerMsrp", String(form.value.dealerMsrp || ""));
     fd.append("dealerComments", form.value.dealerComments || "");
     fd.append("options", "[]");
     if (form.value.file) fd.append("file0", form.value.file);
@@ -518,11 +529,16 @@ const mapApiData = async (apiResponse) => {
     const bidId = findLatestUserBidId(item.negotiationHistory) ? String(findLatestUserBidId(item.negotiationHistory)) : null;
     const model = item.carname || "";
     const brand = (model || "").split(" ")[0] || "";
-    const customerFirst = item.customerDetails?.firstName || "";
-    const customerLast = item.customerDetails?.lastName || "";
+    const customerFullName = item.customerDetails?.fullName || "";
     const customerEmail = item.customerDetails?.email || "";
     const customerPhone = item.customerDetails?.phoneNumber || "";
-    const displayName = customerFirst || customerLast ? `${customerFirst} ${customerLast}`.trim() : customerEmail || "";
+    const displayName = customerFullName
+      ? (() => {
+          const nameParts = customerFullName.trim().split(/\s+/);
+          if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+          return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
+        })()
+      : "Unknown Customer";
 
     const userId = item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null;
 

@@ -269,6 +269,16 @@
               />
             </div>
             <div>
+              <label class="block text-sm font-medium text-primary mb-1">Dealer’s Car MSRP</label>
+              <input
+                v-model="form.dealerMsrp"
+                type="number"
+                min="0"
+                placeholder="Enter Dealer’s Car MSRP"
+                class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </div>
+            <div>
               <label class="block text-sm font-medium text-primary mb-1">Attachment (optional)</label>
               <div class="w-full h-12 rounded-lg border border-[#DBE4F2] flex items-center px-2">
                 <button type="button" @click="fileInput && fileInput.click()" class="px-4 py-2 rounded-md bg-secondary text-white text-sm h-9">Choose File</button>
@@ -428,8 +438,13 @@ const mapApiData = async (apiResponse) => {
       model: item.carname || "",
       price: `$${Number(item.msrp || 0).toLocaleString()}.00`,
       customer: {
-        name:
-          item.customerDetails?.firstName && item.customerDetails?.lastName ? `${item.customerDetails.firstName} ${item.customerDetails.lastName}` : item.customerDetails?.email || "Unknown Customer",
+        name: item.customerDetails?.fullName
+          ? (() => {
+              const nameParts = item.customerDetails.fullName.trim().split(/\s+/);
+              if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+              return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
+            })()
+          : "Unknown Customer",
         email: item.customerDetails?.email || "",
         phone: item.customerDetails?.phoneNumber || "",
         creditScore: userCreditScore.hasCreditScore ? userCreditScore.creditScoreTier : "Not Available",
@@ -474,9 +489,14 @@ const mapCounteredNewApiData = async (apiResponse) => {
 
   return (apiResponse || []).map((item) => {
     const bidId = findLatestUserBidId(item.negotiationHistory);
-    const customerFirst = item.customerDetails?.firstName || "";
-    const customerLast = item.customerDetails?.lastName || "";
-    const displayName = customerFirst || customerLast ? `${customerFirst} ${customerLast}`.trim() : item.customerDetails?.email || "";
+    const customerFullName = item.customerDetails?.fullName || "";
+    const displayName = customerFullName
+      ? (() => {
+          const nameParts = customerFullName.trim().split(/\s+/);
+          if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+          return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
+        })()
+      : "Unknown Customer";
 
     // Extract userId properly - handle both string and object formats
     const userId = item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null;
@@ -584,7 +604,12 @@ const mapAllOffersApiData = async (apiResponse) => {
       model: item.carName || "",
       price: `$${Number(item.carMsrp || 0).toLocaleString()}.00`,
       customer: {
-        name: item.userName || "Unknown Customer",
+        name: (() => {
+          if (!item.userName) return "Unknown Customer";
+          const nameParts = item.userName.trim().split(/\s+/);
+          if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+          return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
+        })(),
         email: item.userEmail || "",
         phone: "",
         creditScore: userCreditScore.hasCreditScore ? userCreditScore.creditScoreTier : "Not Available",
@@ -707,14 +732,14 @@ const rejectBid = async (offer) => {
 const showCounter = ref(false);
 const isSubmitting = ref(false);
 const currentOffer = ref(null);
-const form = ref({ counterBid: "", dealerComments: "", file: null });
+const form = ref({ counterBid: "", dealerMsrp: "", dealerComments: "", file: null });
 const fileName = ref("");
 const fileInputRef = ref(null);
 const fileInput = computed(() => fileInputRef.value);
 
 function openCounterModal(offer) {
   currentOffer.value = offer;
-  form.value = { counterBid: "", dealerComments: "", file: null };
+  form.value = { counterBid: "", dealerMsrp: "", dealerComments: "", file: null };
   showCounter.value = true;
 }
 function closeCounter() {
@@ -757,6 +782,7 @@ const submitCounter = async () => {
     fd.append("bidId", bidId);
     fd.append("dealerAction", "counter");
     fd.append("counterBid", String(form.value.counterBid || ""));
+    fd.append("dealerMsrp", String(form.value.dealerMsrp || ""));
     fd.append("dealerComments", form.value.dealerComments || "");
     fd.append("userDetails", userDetails);
     fd.append("options", "[]");

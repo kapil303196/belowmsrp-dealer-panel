@@ -96,7 +96,7 @@
                 <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
               </button>
             </th>
-            <!-- Car's MSRP column removed -->
+            <!-- Your Build MSRP column removed -->
             <th class="px-[14px] py-2 font-normal">
               <button>
                 User Comments
@@ -134,7 +134,7 @@
             </td>
             <!-- Location cell removed -->
             <td class="px-[14px] py-2 text-sm font-medium">${{ offer.userOffer }}</td>
-            <!-- Car's MSRP cell removed -->
+            <!-- Your Build MSRP cell removed -->
             <td class="px-[14px] py-2 text-sm">{{ offer.comments }}</td>
             <!-- Selected Options cell removed -->
             <td class="px-[14px] py-2 rounded-r-[10px]">
@@ -271,8 +271,13 @@ const mapApiData = async (apiResponse) => {
       brand: item.carname?.split(" ")[0] || "",
       price: `$${Number(item.msrp || 0).toLocaleString()}.00`,
       customer: {
-        name:
-          item.customerDetails?.firstName && item.customerDetails?.lastName ? `${item.customerDetails.firstName} ${item.customerDetails.lastName}` : item.customerDetails?.email || "Unknown Customer",
+        name: item.customerDetails?.fullName
+          ? (() => {
+              const nameParts = item.customerDetails.fullName.trim().split(/\s+/);
+              if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+              return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
+            })()
+          : "Unknown Customer",
         email: item.customerDetails?.email || "",
         phone: item.customerDetails?.phoneNumber || "",
         creditScore: userCreditScore.hasCreditScore ? userCreditScore.creditScoreTier : "Not Available",
