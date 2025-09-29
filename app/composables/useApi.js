@@ -33,7 +33,8 @@ export const useApi = () => {
       return response
     } catch (error) {
       console.error('API GET Error:', error)
-      throw error
+      const apiMessage = error.data?.data?.message || 'Something went wrong'
+      throw new Error(apiMessage)
     }
   }
 
@@ -48,7 +49,8 @@ export const useApi = () => {
       return new Blob([response], { type: 'application/pdf' })
     } catch (error) {
       console.error('API GET (blob) Error:', error)
-      throw error
+      const apiMessage = error.data?.data?.message || 'Something went wrong'
+      throw new Error(apiMessage)
     }
   }
 
@@ -61,8 +63,9 @@ export const useApi = () => {
       })
       return response
     } catch (error) {
-      console.error('API POST Error:', error)
-      throw error
+      console.log('API POST Error:', error?.data)
+      const apiMessage = error.data?.data?.message || 'Something went wrong'
+      throw new Error(apiMessage)
     }
   }
 
@@ -77,7 +80,8 @@ export const useApi = () => {
       return response
     } catch (error) {
       console.error('API POST (form) Error:', error)
-      throw error
+      const apiMessage = error.data?.data?.message || 'Something went wrong'
+      throw new Error(apiMessage)
     }
   }
 
@@ -91,7 +95,8 @@ export const useApi = () => {
       return response
     } catch (error) {
       console.error('API PUT Error:', error)
-      throw error
+      const apiMessage = error.data?.data?.message || 'Something went wrong'
+      throw new Error(apiMessage)
     }
   }
 
@@ -104,7 +109,8 @@ export const useApi = () => {
       return response
     } catch (error) {
       console.error('API DELETE Error:', error)
-      throw error
+      const apiMessage = error.data?.data?.message || 'Something went wrong'
+      throw new Error(apiMessage)
     }
   }
 

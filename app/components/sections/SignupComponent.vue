@@ -141,6 +141,7 @@
 </template>
 
 <script setup>
+import Swal from "sweetalert2";
 import CreditModalAddressInput from '../SeggestionInput/CreditModalAddressInput.vue'
 
 const isSubmitting = ref(false)
@@ -193,13 +194,15 @@ async function handleSubmit() {
     try {
         // Minimal client-side validation
         if (!form.dealershipName || !form.fullName || !form.address || !form.licenseNumber || !form.email || !form.phone || !form.password) {
-            throw new Error('Please fill in all required fields.')
+            // throw new Error('Please fill in all required fields.');
+            Swal.fire({ title: "Error!", text: 'Please fill in all required fields.', icon: "error" });
+            return
         }
 
         const payload = {
             role: 'dealer',
             dealershipName: form.dealershipName,
-            fullName: form.fullName,
+            employeeName: form.fullName,
             address: form.address,
             licenseNumber: form.licenseNumber,
             email: form.email,
@@ -222,13 +225,15 @@ async function handleSubmit() {
             }
             router.push('/')
         } else {
-            alert('Signup successful. Please log in to continue.')
+            Swal.fire({ title: "Success", text: 'Signup successful. Please log in to continue.', icon: "success",});
+            // alert('Signup successful. Please log in to continue.')
             router.push('/login')
         }
     } catch (err) {
-        console.error(err)
-        const apiMessage = err?.data?.message || err?.message || 'Failed to sign up. Please try again.'
-        alert(apiMessage)
+        console.log('HandleSubmit Error: ', err)
+        const apiMessage = err?.response?.data?.message || err?.data?.message || err?.message || 'Failed to sign up. Please try again.'
+        // alert(apiMessage)
+        Swal.fire({ title: "Error!", text: apiMessage, icon: "error" });
     } finally {
         isSubmitting.value = false
     }
