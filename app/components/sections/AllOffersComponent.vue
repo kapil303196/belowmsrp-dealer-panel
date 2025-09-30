@@ -283,14 +283,13 @@
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-primary mb-1">Trade In Counter Offer *</label>
+              <label class="block text-sm font-medium text-primary mb-1">Trade In Counter Offer</label>
               <input
                 v-model="form.tradeInOffer"
                 type="number"
                 min="0"
                 placeholder="Enter Dealer's Car MSRP"
                 class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"
-                required
               />
             </div>
             <div>
