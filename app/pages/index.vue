@@ -3,7 +3,7 @@
     <layout-app-header />
     <sections-stats-overview />
     <sections-offers-analytics />
-    <sections-offers-table />
+    <!-- <sections-offers-table /> -->
     <layout-primary-header />
   </div>
 </template>
