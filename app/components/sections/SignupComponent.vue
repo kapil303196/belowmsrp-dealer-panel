@@ -225,9 +225,15 @@ async function handleSubmit() {
             }
             router.push('/')
         } else {
-            Swal.fire({ title: "Success", text: 'Signup successful. Please log in to continue.', icon: "success",});
-            // alert('Signup successful. Please log in to continue.')
-            router.push('/login')
+            Swal.fire(
+                { 
+                    title: "Success", 
+                    text: 'Account created. Please verify your email and log in.',
+                    icon: "success",
+                }
+            ).then(() => {
+                router.push('/login');
+            });
         }
     } catch (err) {
         console.log('HandleSubmit Error: ', err)
