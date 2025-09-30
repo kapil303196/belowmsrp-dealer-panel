@@ -59,6 +59,12 @@
             </th>
             <th class="px-[14px] py-2 font-normal">
               <button>
+                Submission Date
+                <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
+              </button>
+            </th>
+            <th class="px-[14px] py-2 font-normal">
+              <button>
                 User Comments
                 <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
               </button>
@@ -104,6 +110,7 @@
             <td class="px-[14px] py-2 text-sm">{{ offer.location }}</td>
             <td class="px-[14px] py-2 text-sm font-medium">${{ offer.userOffer }}</td>
             <td class="px-[14px] py-2 text-sm">${{ offer.msrp }}</td>
+            <td class="px-[14px] py-2 text-sm">{{ offer.submissionDate }}</td>
             <td class="px-[14px] py-2 text-sm">{{ offer.comments }}</td>
             <td class="px-[14px] py-2 text-sm">
               <div v-for="(option, index) in getSelectedOptionsArray(offer.selectedOptions)" :key="index" class="mb-1">
@@ -331,6 +338,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import moment from 'moment-timezone';
 
 const dropdownOpen = ref(null);
 function toggleDropdown(type) {
@@ -435,6 +443,7 @@ const mapAllOffersApiData = (apiResponse) => {
     // This endpoint returns userbids with different field names
     // Use _id as bidId since this is the userbid ID
     const bidId = item._id ? String(item._id) : null;
+    const formattedDate = moment.utc(item.createdAt).tz('America/Los_Angeles').format('MM/DD/YYYY');
 
     return {
       bidId: bidId,
@@ -460,6 +469,7 @@ const mapAllOffersApiData = (apiResponse) => {
       location: "13th Street 47",
       userOffer: Number(item.carBid || 0).toLocaleString(),
       msrp: Number(item.carMsrp || 0).toLocaleString(),
+      submissionDate: formattedDate,
       comments: item.userComments || "",
       selectedOptions: getSelectedOptionsText(item.variants || []),
       status: "All Offers",

@@ -87,7 +87,7 @@ const loginApi = async (email, password) => {
     return response;
   } catch (error) {
     console.error("Error during login:", error);
-    throw error;
+    throw new Error(error?.message);
   }
 };
 
@@ -121,7 +121,7 @@ const handleLogin = async () => {
     navigateTo("/");
   } catch (error) {
     console.error("Login failed:", error);
-    errorMessage.value = "Invalid credentials. Please try again.";
+    errorMessage.value = error?.message || "Invalid credentials. Please try again.";
   } finally {
     isSubmitting.value = false;
   }
