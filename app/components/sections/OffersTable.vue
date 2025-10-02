@@ -297,7 +297,7 @@
             </div>
           </div>
           <div class="mt-6 flex justify-end">
-            <ui-base-button :disabled="isSubmitting" variant="secondary">
+            <ui-base-button :disabled="isSubmitting" type="submit" variant="secondary">
               <span v-if="isSubmitting" class="inline-flex items-center">
                 <svg class="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>

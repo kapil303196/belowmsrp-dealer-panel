@@ -1,5 +1,6 @@
 <template>
-    <button :class="[
+    <button :type="type"
+            :class="[
         'px-6 py-[16px] font-semibold rounded-lg transition-all duration-200 text-[16px] h-[54px] inline-flex items-center justify-center',
         {
             'bg-primary text-white border border-primary hover:bg-transparent hover:text-primary': variant === 'primary',
@@ -18,10 +19,13 @@
 </template>
 
 <script setup lang="ts">
-defineProps({
-    variant: {
-        type: String,
-        default: 'primary' // or 'secondary', 'accent', etc.
-    }
-})
+type ButtonType = 'submit' | 'button' | 'reset';
+
+const props = withDefaults(defineProps<{
+    variant?: string;
+    type?: ButtonType;
+}>(), {
+    variant: 'primary',
+    type: 'submit'
+});
 </script>
