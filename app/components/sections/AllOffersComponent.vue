@@ -102,10 +102,10 @@
               <div>Credit Score: {{ offer.customer.creditScore }}</div>
             </td>
             <td class="px-[14px] py-2 whitespace-pre-line text-sm">
-              <div>Vehicle: {{ offer?.kpiData?.decodedVehicle?.make }} {{ offer?.kpiData?.decodedVehicle?.model }} {{ offer?.kpiData?.decodedVehicle?.year }}</div>
-              <div>VIN: {{ offer?.kpiData?.request?.vin }}</div>
-              <div>Mileage: {{ offer?.kpiData?.request?.mileage }}</div>
-              <div>Price Range: {{ offer?.kpiData?.kbbValues?.goodCondition?.tradeIn?.lowRange }} - {{ offer?.kpiData?.kbbValues?.goodCondition?.tradeIn?.highRange }}</div>
+              <div>Vehicle: {{ getVehicleText(offer) }}</div>
+              <div>VIN: {{ getVinText(offer) }}</div>
+              <div>Mileage: {{ getMileageText(offer) }}</div>
+              <div>Price Range: {{ getTradeInRange(offer) }}</div>
             </td>
             <td class="px-[14px] py-2 text-sm">{{ offer.location }}</td>
             <td class="px-[14px] py-2 text-sm font-medium">${{ offer.userOffer }}</td>
@@ -197,6 +197,25 @@
                 <span class="font-semibold">${{ offer.msrp }}</span>
               </div>
             </div>
+            <div class="rounded-lg border-none bg-white p-2 mt-3">
+              <p class="text-sm text-primary font-medium mb-1">Trade in Vehicle</p>
+              <div class="flex justify-between border-none p-1">
+                <span class="text-[#081735] opacity-55">Vehicle:</span>
+                <span class="font-normal">{{ getVehicleText(offer) }}</span>
+              </div>
+              <div class="flex justify-between border-none p-1">
+                <span class="text-[#081735] opacity-55">VIN:</span>
+                <span class="font-normal">{{ getVinText(offer) }}</span>
+              </div>
+              <div class="flex justify-between border-none p-1">
+                <span class="text-[#081735] opacity-55">Mileage:</span>
+                <span class="font-normal">{{ getMileageText(offer) }}</span>
+              </div>
+              <div class="flex justify-between border-none p-1">
+                <span class="text-[#081735] opacity-55">Price Range:</span>
+                <span class="font-normal">{{ getTradeInRange(offer) }}</span>
+              </div>
+            </div>
           </div>
         </div>
         <!-- Selected Options -->
@@ -236,7 +255,7 @@
             </svg>
             <img v-else src="../../assets/images/icons/cross-icon.svg" alt="icon" class="w-5 h-5" />
           </button>
-          <button @click="downloadPdf(offer)" class="w-full h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center">
+          <button @click="previewPdf(offer)" class="w-full h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center" title="Preview PDF">
             <svg v-if="isDownloading(offer)" class="animate-spin h-5 w-5 text-primary" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
@@ -392,6 +411,52 @@ const paginatedOffers = computed(() => {
   const start = (currentPage.value - 1) * pageSize;
   return filteredOffers.value.slice(start, start + pageSize);
 });
+
+// Trade-in helpers with 'N/A' fallback
+function getVehicleText(offer) {
+  try {
+    const dv = offer && offer.kpiData && offer.kpiData.decodedVehicle ? offer.kpiData.decodedVehicle : null;
+    const make = dv && dv.make ? dv.make : null;
+    const model = dv && dv.model ? dv.model : null;
+    const year = dv && dv.year ? dv.year : null;
+    const parts = [make, model, year].filter((v) => v);
+    return parts.length ? parts.join(' ') : 'N/A';
+  } catch (_) {
+    return 'N/A';
+  }
+}
+
+function getVinText(offer) {
+  try {
+    const vin = offer && offer.kpiData && offer.kpiData.request ? offer.kpiData.request.vin : null;
+    return vin && String(vin).trim() ? vin : 'N/A';
+  } catch (_) {
+    return 'N/A';
+  }
+}
+
+function getMileageText(offer) {
+  try {
+    const mileage = offer && offer.kpiData && offer.kpiData.request ? offer.kpiData.request.mileage : null;
+    return mileage && String(mileage).trim() ? mileage : 'N/A';
+  } catch (_) {
+    return 'N/A';
+  }
+}
+
+function getTradeInRange(offer) {
+  try {
+    const t = offer && offer.kpiData && offer.kpiData.kbbValues && offer.kpiData.kbbValues.goodCondition && offer.kpiData.kbbValues.goodCondition.tradeIn
+      ? offer.kpiData.kbbValues.goodCondition.tradeIn
+      : null;
+    const low = t && t.lowRange ? t.lowRange : null;
+    const high = t && t.highRange ? t.highRange : null;
+    if (low != null && high != null) return `${low} - ${high}`;
+    return 'N/A';
+  } catch (_) {
+    return 'N/A';
+  }
+}
 
 function goToPage(page) {
   if (page >= 1 && page <= totalPages.value) {
