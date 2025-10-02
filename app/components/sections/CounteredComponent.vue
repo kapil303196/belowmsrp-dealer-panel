@@ -192,7 +192,7 @@
     </div>
 
     <!-- Counter Modal -->
-    <div v-if="showCounter" class="fixed inset-0 z-[100] flex items-center justify-center">
+    <div v-if="showCounter" class="fixed inset-0 z-[1000] flex items-center justify-center">
       <div class="absolute inset-0 bg-black/30" @click="closeCounter"></div>
       <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-xl mx-4 p-6">
         <div class="flex items-start justify-between mb-4">
@@ -241,10 +241,10 @@
             </div>
           </div>
           <div class="mt-6 flex justify-end">
-            <button :disabled="isSubmitting" class="px-4 py-2 rounded-md bg-secondary text-white text-sm h-10 disabled:opacity-50">
+            <ui-base-button :disabled="isSubmitting" type="submit" variant="secondary">
               <span v-if="isSubmitting" class="inline-flex items-center">Submitting...</span>
               <span v-else>Submit</span>
-            </button>
+            </ui-base-button>
           </div>
         </form>
       </div>

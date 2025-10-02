@@ -251,7 +251,7 @@
     <UiPaginationBar :currentPage="currentPage" :totalPages="totalPages" :totalEntries="allOffers.length" @goToPage="goToPage" />
 
     <!-- Counter Modal -->
-    <div v-if="showCounter" class="fixed inset-0 z-[100] flex items-center justify-center">
+    <div v-if="showCounter" class="fixed inset-0 z-[1000] flex items-center justify-center">
       <div class="absolute inset-0 bg-black/30" @click="closeCounter"></div>
       <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-xl mx-4 p-6">
         <div class="flex items-start justify-between mb-4">
@@ -311,7 +311,7 @@
             </div>
           </div>
           <div class="mt-6 flex justify-end">
-            <ui-base-button :disabled="isSubmitting" variant="secondary">
+            <ui-base-button :disabled="isSubmitting" type="submit" variant="secondary">
               <span v-if="isSubmitting" class="inline-flex items-center">
                 <svg class="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
