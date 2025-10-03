@@ -535,7 +535,7 @@ const mapAllOffersApiData = (apiResponse) => {
         })(),
         email: item.userEmail || "",
         phone: "",
-        creditScore: 0,
+        creditScore: item?.userId?.softPullReport?.reportData?.intelligence?.name || '0',
       },
       kpiData: item?.userId?.kbbValue,
       userId: item?.userId ? normalizeId(item.userId) : null,
