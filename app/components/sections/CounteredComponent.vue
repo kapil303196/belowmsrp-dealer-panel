@@ -228,7 +228,7 @@
                 <button type="button" @click="fileInput && fileInput.click()" class="px-4 py-2 rounded-md bg-secondary text-white text-sm h-9">Choose File</button>
                 <span class="ml-3 text-primary/80 truncate">{{ fileName || "No file chosen" }}</span>
               </div>
-              <input ref="fileInputRef" @change="onFileChange" type="file" accept="*/*" class="hidden" />
+              <input ref="fileInputRef" @change="onFileChange" multiple type="file" accept=".pdf,image/*" class="hidden" />
             </div>
             <div>
               <label class="block text-sm font-medium text-primary mb-1">Comments</label>
@@ -388,6 +388,8 @@ function openCounterModal(offer) {
   currentOffer.value = offer;
   form.value = { counterBid: "", dealerMsrp: "", dealerComments: "", file: null };
   fileName.value = "";
+  form.value.files = [];
+  fileName.value = "";
   showCounter.value = true;
 }
 function closeCounter() {
@@ -396,8 +398,17 @@ function closeCounter() {
 }
 function onFileChange(e) {
   const files = e.target.files;
-  form.value.file = files && files.length ? files[0] : null;
-  fileName.value = form.value.file ? form.value.file.name : "";
+   if (!files || !files.length) {
+    form.value.files = [];
+    fileName.value = "";
+    return;
+  }
+   const validFiles = Array.from(files).filter(
+    f => f.type === "application/pdf" || f.type.startsWith("image/")
+  );
+
+  form.value.files = validFiles;
+  fileName.value = validFiles.map(f => f.name).join(", ");
 }
 
 const submitCounter = async () => {
@@ -420,7 +431,10 @@ const submitCounter = async () => {
     fd.append("dealerMsrp", String(form.value.dealerMsrp || ""));
     fd.append("dealerComments", form.value.dealerComments || "");
     fd.append("options", "[]");
-    if (form.value.file) fd.append("file0", form.value.file);
+     if (form.value.files && form.value.files.length) {
+       form.value.files.forEach((file, index) => {
+       fd.append(`file${index}`, file);
+     })};
 
     await apiPostForm("/bid/dealer-bid-counter", fd);
     await getCounteredOffers();
