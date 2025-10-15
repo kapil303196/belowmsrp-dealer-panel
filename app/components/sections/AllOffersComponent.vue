@@ -19,137 +19,135 @@
     <div v-if="!isLoading && !hasData" class="flex items-center justify-center py-10 text-primary/60">No offers to display.</div>
 
     <!-- Table: Desktop screens only -->
-    <div v-if="!isLoading && hasData" class="overflow-auto max-md:hidden">
+    <div v-if="!isLoading && hasData" class="max-md:hidden">
       <table class="w-full text-left text-sm text-primary font-normal">
         <thead>
-          <tr>
-            <th class="px-[14px] py-2 flex items-center gap-[10px] font-normal">
-              <input type="checkbox" class="min-w-5 min-h-5 thick-black-checkbox" />
-              Model and name
+          <tr class="border-b border-[#E8EEF9]">
+            <th class="px-4 py-3 font-medium w-[300px]">
+              <div class="flex items-center gap-2">
+                <input type="checkbox" class="min-w-5 min-h-5 thick-black-checkbox" />
+                <span>Vehicle Details</span>
+              </div>
             </th>
-            <th class="px-[14px] py-2 font-normal">
-              <button>
-                Customer
-                <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
+            <th class="px-4 py-3 font-medium w-[250px]">
+              <button class="flex items-center gap-2">
+                Customer Info
+                <img src="~/assets/images/icons/filter-icon.svg" alt="" />
               </button>
             </th>
-            <th class="px-[14px] py-2 font-normal">
-              <button>
-                Trade in Vehicle
-                <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
+            <th class="px-4 py-3 font-medium w-[250px]">
+              <button class="flex items-center gap-2">
+                Trade-in & Pricing
+                <img src="~/assets/images/icons/filter-icon.svg" alt="" />
               </button>
             </th>
-            <th class="px-[14px] py-2 font-normal">
-              <button>
-                Location
-                <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
+            <th class="px-4 py-3 font-medium">
+              <button class="flex items-center gap-2">
+                Additional Info
+                <img src="~/assets/images/icons/filter-icon.svg" alt="" />
               </button>
             </th>
-            <th class="px-[14px] py-2 font-normal">
-              <button>
-                User Offer
-                <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
-              </button>
-            </th>
-            <th class="px-[14px] py-2 font-normal">
-              <button>
-                Car's Build MSRP
-                <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
-              </button>
-            </th>
-            <th class="px-[14px] py-2 font-normal">
-              <button>
-                Submission Date
-                <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
-              </button>
-            </th>
-            <th class="px-[14px] py-2 font-normal">
-              <button>
-                User Comments
-                <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
-              </button>
-            </th>
-            <th class="px-[14px] py-2 font-normal">
-              <button>
-                Selected Options
-                <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
-              </button>
-            </th>
-            <th class="px-[14px] py-2 font-normal">
-              <button>
-                Actions
-                <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
-              </button>
-            </th>
+            <th class="px-4 py-3 font-medium w-[180px] text-center">Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="(offer, index) in paginatedOffers" :key="index" class="border-t-4 border-[#F7FAFF] bg-[#E8EEF9]">
-            <td class="px-[14px] py-2 rounded-l-[10px]">
-              <div class="flex items-center gap-[10px]">
-                <input type="checkbox" class="min-w-5 min-h-5 thick-black-checkbox" />
-                <div class="flex items-center space-x-3">
+            <td class="p-4 rounded-l-[10px]">
+              <div class="flex items-start gap-3">
+                <input type="checkbox" class="min-w-5 min-h-5 thick-black-checkbox mt-1" />
+                <div class="flex gap-3">
                   <img :src="offer.image" class="w-[71px] h-12 rounded object-cover" />
                   <div>
-                    <div class="text-[13px] font-medium text-primary">{{ offer.model }}</div>
-                    <div class="text-[13px] font-medium text-primary">{{ offer.price }}</div>
+                    <div class="font-medium text-primary">{{ offer.model }}</div>
+                    <div class="text-primary/80">{{ offer.price }}</div>
+                    <div class="text-sm text-primary/70">{{ offer.location }}</div>
                   </div>
                 </div>
               </div>
             </td>
-            <td class="px-[14px] py-2 whitespace-pre-line text-sm">
-              <div>Name: {{ offer.customer.name }}</div>
-              <div>Credit Score: {{ offer.customer.creditScore }}</div>
-            </td>
-            <td class="px-[14px] py-2 whitespace-pre-line text-sm">
-              <div>Vehicle: {{ getVehicleText(offer) }}</div>
-              <div>VIN: {{ getVinText(offer) }}</div>
-              <div>Mileage: {{ getMileageText(offer) }}</div>
-              <div>Price Range: {{ getTradeInRange(offer) }}</div>
-            </td>
-            <td class="px-[14px] py-2 text-sm">{{ offer.location }}</td>
-            <td class="px-[14px] py-2 text-sm font-medium">${{ offer.userOffer }}</td>
-            <td class="px-[14px] py-2 text-sm">${{ offer.msrp }}</td>
-            <td class="px-[14px] py-2 text-sm">{{ offer.submissionDate }}</td>
-            <td class="px-[14px] py-2 text-sm">{{ offer.comments }}</td>
-            <td class="px-[14px] py-2 text-sm">
-              <div v-for="(option, index) in getSelectedOptionsArray(offer.selectedOptions)" :key="index" class="mb-1">
-                {{ option }}
+            <td class="p-4">
+              <div class="space-y-2">
+                <div>
+                  <div class="font-medium">{{ offer.customer.name }}</div>
+                  <div class="text-primary/80">Credit Score: {{ offer.customer.creditScore === '0' ? 'Not Available' : offer.customer.creditScore }}</div>
+                  <div class="text-primary/70">Submitted: {{ offer.submissionDate }}</div>
+                </div>
+                <div v-if="offer.comments" class="text-sm bg-white/50 rounded p-2">
+                  <div class="font-medium text-primary/70 mb-1">Customer Comments:</div>
+                  <div class="text-primary/80 italic">{{ offer.comments }}</div>
+                </div>
               </div>
             </td>
-            <td class="px-[14px] py-2 rounded-r-[10px]">
-              <div class="flex items-center gap-1">
+            <td class="p-4">
+              <div class="space-y-2">
+                <div class="bg-white rounded p-2">
+                  <div class="flex justify-between items-center">
+                    <span class="text-primary/70">User Offer:</span>
+                    <span class="font-medium">${{ offer.userOffer }}</span>
+                  </div>
+                  <div class="flex justify-between items-center mt-1">
+                    <span class="text-primary/70">MSRP:</span>
+                    <span>${{ offer.msrp }}</span>
+                  </div>
+                </div>
+                <div class="text-sm">
+                  <div><span class="text-primary/70">Trade-in:</span> {{ getVehicleText(offer) }}</div>
+                  <div><span class="text-primary/70">Value:</span> {{ getTradeInRange(offer) }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="p-4">
+              <div v-if="offer.selectedOptions" class="text-sm">
+                <div class="font-medium mb-2">Selected Options:</div>
+                <div class="bg-white/50 rounded p-2">
+                  <div v-for="(option, idx) in getSelectedOptionsArray(offer.selectedOptions)" :key="idx" 
+                    class="text-primary/80 mb-1 last:mb-0">{{ option }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="p-4 rounded-r-[10px]">
+              <div class="flex items-center justify-center gap-2">
                 <button
                   @click="acceptBid(offer)"
                   :disabled="isAccepting(offer) || isRejecting(offer)"
                   class="relative w-[38px] h-10 border border-[#2C8436] rounded-lg flex items-center justify-center flex-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Accept Offer"
                 >
                   <svg v-if="isAccepting(offer)" class="animate-spin h-5 w-5 text-[#2C8436]" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                   </svg>
-                  <img v-else src="../../assets/images/icons/green-check.svg" alt="icon" class="w-5 h-5" />
+                  <img v-else src="../../assets/images/icons/green-check.svg" alt="Accept" class="w-5 h-5" />
                 </button>
-                <button @click="openCounterModal(offer)" class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none">
-                  <img src="../../assets/images/icons/equal-icon.svg" alt="icon" class="w-5 h-5" />
+                <button 
+                  @click="openCounterModal(offer)" 
+                  class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none"
+                  title="Counter Offer"
+                >
+                  <img src="../../assets/images/icons/equal-icon.svg" alt="Counter" class="w-5 h-5" />
                 </button>
                 <button
                   @click="rejectBid(offer)"
                   :disabled="isAccepting(offer) || isRejecting(offer)"
                   class="relative w-[38px] h-10 border border-[#D53660] rounded-lg flex items-center justify-center flex-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Reject Offer"
                 >
                   <svg v-if="isRejecting(offer)" class="animate-spin h-5 w-5 text-[#D53660]" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                   </svg>
-                  <img v-else src="../../assets/images/icons/cross-icon.svg" alt="icon" class="w-5 h-5" />
+                  <img v-else src="../../assets/images/icons/cross-icon.svg" alt="Reject" class="w-5 h-5" />
                 </button>
-                <button @click="previewPdf(offer)" class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none" title="Preview PDF">
+                <button 
+                  @click="previewPdf(offer)" 
+                  class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none" 
+                  title="Preview PDF"
+                >
                   <svg v-if="isDownloading(offer)" class="animate-spin h-5 w-5 text-primary" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                   </svg>
-                  <img v-else src="../../assets/images/icons/download-icon.svg" alt="icon" class="w-5 h-5" />
+                  <img v-else src="../../assets/images/icons/download-icon.svg" alt="Preview" class="w-5 h-5" />
                 </button>
               </div>
             </td>
@@ -791,9 +789,22 @@ onMounted(() => {
 
 td,
 th {
-  max-width: 220px;
-  white-space: nowrap;
+  vertical-align: top;
+}
+
+td > div {
+  min-width: 0; /* Enable text truncation in flex containers */
+}
+
+.text-primary {
+  word-break: break-word;
+}
+
+/* Ensure comments and options don't overflow */
+td [class*="text-primary"] {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 </style>
