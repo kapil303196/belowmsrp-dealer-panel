@@ -107,7 +107,7 @@
             </td>
             <td class="p-4 rounded-r-[10px]">
               <div class="flex items-center justify-center gap-2">
-                <button
+                <!-- <button
                   @click="acceptBid(offer)"
                   :disabled="isAccepting(offer) || isRejecting(offer)"
                   class="relative w-[38px] h-10 border border-[#2C8436] rounded-lg flex items-center justify-center flex-none disabled:opacity-50 disabled:cursor-not-allowed"
@@ -118,7 +118,7 @@
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                   </svg>
                   <img v-else src="../../assets/images/icons/green-check.svg" alt="Accept" class="w-5 h-5" />
-                </button>
+                </button> -->
                 <button 
                   @click="openCounterModal(offer)" 
                   class="relative w-[38px] h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center flex-none"
@@ -228,7 +228,7 @@
         </div>
         <!-- Action buttons at bottom -->
         <div class="flex items-center gap-2 center mt-[14px]">
-          <button
+          <!-- <button
             @click="acceptBid(offer)"
             :disabled="isAccepting(offer) || isRejecting(offer)"
             class="w-full h-10 border border-[#2C8436] rounded-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
@@ -238,7 +238,7 @@
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
             </svg>
             <img v-else src="../../assets/images/icons/green-check.svg" alt="icon" class="w-5 h-5" />
-          </button>
+          </button> -->
           <button @click="openCounterModal(offer)" class="w-full h-10 border border-[#2C73DB] rounded-lg flex items-center justify-center">
             <img src="../../assets/images/icons/equal-icon.svg" alt="icon" class="w-5 h-5" />
           </button>
