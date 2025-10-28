@@ -147,12 +147,12 @@
       </table>
     </div>
     <!-- Pagination Controls -->
-    <UiPaginationBar v-if="!isLoading && totalPages > 0" :currentPage="currentPage" :totalPages="totalPages" :totalEntries="allOffers.length" @goToPage="goToPage" />
+    <UiPaginationBar v-if="!isLoading && serverTotalPages > 0" :currentPage="currentPage" :totalPages="serverTotalPages" :totalEntries="totalEntries" @goToPage="goToPage" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
 import { normalizeId } from "~/composables/useNormalizeId";
 
 const dropdownOpen = ref(null);
@@ -170,12 +170,16 @@ if (typeof window !== "undefined") {
   });
 }
 
-const pageSize = 6;
+// server-driven page size (limit)
+const serverPageSize = ref(20);
 const currentPage = ref(1);
 const allOffers = ref([]);
 const searchText = ref("");
 const selectedModel = ref("");
 const isLoading = ref(false);
+// server pagination metadata
+const serverTotalPages = ref(1);
+const totalEntries = ref(0);
 
 const filteredOffers = computed(() => {
   const s = searchText.value.trim().toLowerCase();
@@ -189,16 +193,12 @@ const filteredOffers = computed(() => {
   });
 });
 
-const totalPages = computed(() => Math.ceil(filteredOffers.value.length / pageSize));
-
-const paginatedOffers = computed(() => {
-  const start = (currentPage.value - 1) * pageSize;
-  return filteredOffers.value.slice(start, start + pageSize);
-});
+// server pagination: display the fetched page (still allow local filtering on that page)
+const paginatedOffers = computed(() => filteredOffers.value);
 
 function goToPage(page) {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page;
+  if (page >= 1 && page <= serverTotalPages.value) {
+    getAcceptedOffers(page);
   }
 }
 
@@ -206,12 +206,29 @@ function goToPage(page) {
 const { apiGet } = useApi();
 const { getMultipleUserCreditScores } = useCreditScore();
 
-const getAcceptedOffers = async () => {
+const getAcceptedOffers = async (page = 1) => {
   try {
+    // reflect requested page immediately for UI
+    currentPage.value = page;
     isLoading.value = true;
-    const dealerId = JSON.parse(localStorage.getItem("auth")).user._id;
-    const response = await apiGet(`/bid/get-dealer-bid/accept/${dealerId}`);
-    allOffers.value = await mapApiData(response.data);
+
+    // only send pagination params to backend; keep search/model filtering local
+    const params = { page, limit: serverPageSize.value };
+    const qs = new URLSearchParams(params).toString();
+    const response = await apiGet(`/bid/v2/dealer/accepted-offers?${qs}`);
+
+    // read negotiations array (safe fallback)
+    const negotiationsArray = Array.isArray(response.data?.negotiations) ? response.data.negotiations : [];
+
+    // map and await results (mapApiData is async)
+    const mapped = await mapApiData(negotiationsArray);
+    allOffers.value = mapped;
+
+    // pagination metadata from server (safe fallbacks)
+    const pagination = response.data?.pagination || {};
+    currentPage.value = Number(pagination.page) || page;
+    serverTotalPages.value = Number(pagination.totalPages) || Math.max(1, Math.ceil((Number(pagination.total) || negotiationsArray.length) / serverPageSize.value));
+    totalEntries.value = Number(pagination.total) || negotiationsArray.length;
   } catch (error) {
     console.error("Error fetching accepted offers:", error);
   } finally {
@@ -238,10 +255,18 @@ const getSelectedOptionsText = (variants) => {
     .join(", ");
 };
 
+// Make mapApiData resilient to negotiation items (with userBidId & userId) or older shapes
 const mapApiData = async (apiResponse) => {
-  // Extract user IDs for credit score lookup
+  // Collect userIds from multiple possible locations
   const userIds = apiResponse
-    .map((item) => (item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null))
+    .map((item) => {
+      const uid =
+        (item.userId && (item.userId._id || item.userId)) || // negotiation.userId object or id
+        (item.userBidId && (item.userBidId.userId || item.userBidId.userId?._id)) || // nested userBidId.userId
+        (item.customerDetails && item.customerDetails.userId) ||
+        null;
+      return uid ? normalizeId(uid) : null;
+    })
     .filter((id) => id)
     .map((id) => String(id));
 
@@ -256,40 +281,48 @@ const mapApiData = async (apiResponse) => {
   }
 
   return apiResponse.map((item) => {
-    // Get the first user offer from negotiation history to extract bid details
-    const userOffer = item.negotiationHistory?.find((h) => h.type === "user_offer");
-    const bidId = userOffer?.bidId ? normalizeId(userOffer.bidId) : null;
+    // support both negotiation-style objects and older flat items
+    const source = item.userBidId || item; // userBidId contains carName, carImage, etc when present
+    const userObj = item.userId || item.customerDetails || source.userId || null;
 
-    // Extract userId properly - handle both string and object formats
-    const userId = item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null;
+    // attempt to determine bidId and carId
+    const bidId = source._id ? normalizeId(source._id) : item._id ? normalizeId(item._id) : null;
+    const carId = item.carId || source.carId || null;
 
-    const userCreditScore = creditScores[userId] || { hasCreditScore: false, creditScoreTier: null };
+    // prefer user fullName from item.userId (negotiation) then source/user fields
+    const customerName =
+      (userObj && (userObj.fullName || userObj.name)) ||
+      source.userName ||
+      (item.customerDetails && item.customerDetails.fullName) ||
+      "Unknown Customer";
+
+    const userId = (userObj && (userObj._id || userObj)) ? normalizeId(userObj._id || userObj) : null;
+    const userCreditScore = (userId && creditScores[userId]) ? creditScores[userId] : { hasCreditScore: false, creditScoreTier: null };
 
     return {
-      image: item.image || "",
-      model: item.carname || "",
-      brand: item.carname?.split(" ")[0] || "",
-      price: `$${Number(item.msrp || 0).toLocaleString()}.00`,
+      image: source.carImage || source.image || "",
+      model: source.carName || source.carname || source.model || "",
+      brand: (source.carName || source.carname || "").split(" ")[0] || "",
+      price: `$${Number(source.carMsrp || source.msrp || 0).toLocaleString()}.00`,
       customer: {
-        name: item.customerDetails?.fullName
-          ? (() => {
-              const nameParts = item.customerDetails.fullName.trim().split(/\s+/);
-              if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
-              return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
-            })()
-          : "Unknown Customer",
-        email: item.customerDetails?.email || "",
-        phone: item.customerDetails?.phoneNumber || "",
+        name: (() => {
+          if (!customerName) return "Unknown Customer";
+          const nameParts = String(customerName).trim().split(/\s+/);
+          if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+          return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
+        })(),
+        email: (userObj && (userObj.email || userObj.userEmail)) || source.userEmail || (item.customerDetails && item.customerDetails.email) || "",
+        phone: (userObj && (userObj.phoneNumber || userObj.phone)) || (item.customerDetails && item.customerDetails.phoneNumber) || "",
         creditScore: userCreditScore.hasCreditScore ? userCreditScore.creditScoreTier : "Not Available",
       },
       location: "13th Street 47 ",
-      userOffer: Number(item.latestUserOffer || 0).toLocaleString(),
-      msrp: Number(item.msrp || 0).toLocaleString(),
-      comments: item.latestUserComments || "",
-      selectedOptions: getSelectedOptionsText(item.userVariants || []),
+      userOffer: Number(source.carBid || source.latestUserOffer || 0).toLocaleString(),
+      msrp: Number(source.carMsrp || source.msrp || 0).toLocaleString(),
+      comments: source.userComments || item.latestUserComments || "",
+      selectedOptions: getSelectedOptionsText(source.variants || source.userVariants || []),
       status: item.status || "Accepted",
       bidId: bidId,
-      carId: item.id,
+      carId: carId,
       userId: userId || "",
       dealerId: JSON.parse(localStorage.getItem("auth") || "{}")?.user?._id || "",
     };
@@ -297,7 +330,22 @@ const mapApiData = async (apiResponse) => {
 };
 
 onMounted(() => {
-  getAcceptedOffers();
+  getAcceptedOffers(currentPage.value);
+});
+
+// debounce timer for filter changes
+const filterTimer = ref(null);
+watch([searchText, selectedModel], () => {
+  if (filterTimer.value) clearTimeout(filterTimer.value);
+  // debounced: only reset current page (do NOT call the API) so filtering stays local
+  filterTimer.value = setTimeout(() => {
+    currentPage.value = 1;
+    filterTimer.value = null;
+  }, 400);
+});
+
+onBeforeUnmount(() => {
+  if (filterTimer.value) clearTimeout(filterTimer.value);
 });
 </script>
 

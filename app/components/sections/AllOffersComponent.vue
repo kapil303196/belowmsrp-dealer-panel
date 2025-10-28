@@ -265,7 +265,7 @@
     </div>
 
     <!-- Pagination Controls -->
-    <UiPaginationBar :currentPage="currentPage" :totalPages="totalPages" :totalEntries="allOffers.length" @goToPage="goToPage" />
+    <UiPaginationBar :currentPage="currentPage" :totalPages="serverTotalPages" :totalEntries="totalEntries" @goToPage="goToPage" />
 
     <!-- Counter Modal -->
     <div v-if="showCounter" class="fixed inset-0 z-[1000] flex items-center justify-center">
@@ -382,7 +382,9 @@ if (typeof window !== "undefined") {
   });
 }
 
-const pageSize = 6;
+// page size is driven by backend 'limit' param
+const serverPageSize = ref(5);
+
 const currentPage = ref(1);
 const allOffers = ref([]);
 const searchText = ref("");
@@ -390,6 +392,10 @@ const selectedModel = ref("");
 const isLoading = ref(false);
 const acceptingIds = ref(new Set());
 const rejectingIds = ref(new Set());
+
+// server pagination metadata
+const serverTotalPages = ref(1);
+const totalEntries = ref(0);
 
 const filteredOffers = computed(() => {
   const s = searchText.value.trim().toLowerCase();
@@ -402,13 +408,10 @@ const filteredOffers = computed(() => {
     return hay.includes(s);
   });
 });
-const totalPages = computed(() => Math.ceil(filteredOffers.value.length / pageSize));
 const hasData = computed(() => filteredOffers.value.length > 0);
 
-const paginatedOffers = computed(() => {
-  const start = (currentPage.value - 1) * pageSize;
-  return filteredOffers.value.slice(start, start + pageSize);
-});
+// with server pagination we display the fetched page, still allow local filtering on that page
+const paginatedOffers = computed(() => filteredOffers.value);
 
 // Trade-in helpers with 'N/A' fallback
 function getVehicleText(offer) {
@@ -457,8 +460,9 @@ function getTradeInRange(offer) {
 }
 
 function goToPage(page) {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page;
+  if (page >= 1 && page <= serverTotalPages.value) {
+    // fetch the requested page from backend
+    getAllOffers(page);
   }
 }
 
@@ -467,11 +471,23 @@ const { apiGet, apiPost, apiPostForm, apiGetBlob } = useApi();
 // removed new-tab blob preview import
 import { normalizeId } from "~/composables/useNormalizeId";
 
-const getAllOffers = async () => {
+const getAllOffers = async (page = 1) => {
   try {
     isLoading.value = true;
-    const response = await apiGet("/bid/all-bid");
-    allOffers.value = mapAllOffersApiData(response.data);
+    const params = {
+      page,
+      limit: serverPageSize.value,
+      sortOrder: 'desc'
+    };
+    const queryString = new URLSearchParams(params).toString();
+    const response = await apiGet(`/bid/v2/dealer/available-bids?${queryString}`);
+    // normalize api bids to component shape
+    const bids = Array.isArray(response.data?.bids) ? mapAllOffersApiData(response.data.bids) : [];
+    allOffers.value = bids;
+    // set server pagination metadata (safe-fallbacks)
+    currentPage.value = Number(response.data?.pagination?.page) || page;
+    serverTotalPages.value = Number(response.data?.pagination?.totalPages) || Math.max(1, Math.ceil((response.data?.pagination?.total || bids.length) / serverPageSize.value));
+    totalEntries.value = Number(response.data?.pagination?.total) || bids.length;
   } catch (error) {
     console.error("Error fetching all offers:", error);
   } finally {
@@ -553,11 +569,16 @@ const mapAllOffersApiData = (apiResponse) => {
 const acceptBid = async (offer) => {
   try {
     acceptingIds.value.add(offer.bidId);
+    // carId/bidId might be string or object; normalize
+    const carIdRaw = offer.carId;
+    const carId = typeof carIdRaw === "object" && carIdRaw?._id ? carIdRaw._id : carIdRaw;
+    const bidIdRaw = offer.bidId;
+    const bidId = typeof bidIdRaw === "object" && bidIdRaw?._id ? bidIdRaw._id : bidIdRaw;
     const payload = {
       userId: offer.userId,
       dealerId: offer.dealerId,
-      carId: offer.carId._id,
-      bidId: offer.bidId,
+      carId,
+      bidId,
       dealerAction: "accept",
     };
     await apiPost("/bid/dealer-bid-action", payload);
@@ -573,13 +594,13 @@ const rejectBid = async (offer) => {
   try {
     rejectingIds.value.add(offer.bidId);
     const payload = {
-      userId: offer.userId,
-      dealerId: offer.dealerId,
-      carId: offer.carId._id,
-      bidId: offer.bidId,
-      dealerAction: "reject",
+      // userId: offer.userId,
+      // dealerId: offer.dealerId,
+      // carId: offer.carId._id,
+      userBidId: offer.bidId,
+      // dealerAction: "reject",
     };
-    await apiPost("/bid/dealer-bid-action", payload);
+    await apiPost("/bid/v2/dealer/reject", payload);
     await getAllOffers();
   } catch (error) {
     console.error("Error rejecting bid:", error);
@@ -665,29 +686,34 @@ const submitCounter = async () => {
     const dealerEmail = auth?.user?.email || "";
     const dealerName = auth?.user?.name || auth?.user?.fullName || "Dealer";
     const userDetails = auth?.user ? JSON.stringify(auth.user) : "{}";
-
+    const metadata = {
+      dealerMsrp: form.value.dealerMsrp || "",
+      tradeInOffer: form.value.tradeInOffer || "",
+      // deliveryFee: form.value.deliveryFee || ""
+    };
     const fd = new FormData();
-    fd.append("userId", userId);
-    fd.append("userEmail", currentOffer.value.customer?.email || "");
-    fd.append("dealerId", dealerId);
-    fd.append("dealerName", dealerName);
-    fd.append("dealerEmail", dealerEmail);
-    fd.append("carId", carId);
-    fd.append("bidId", bidId);
-    fd.append("dealerAction", "counter");
-    fd.append("counterBid", String(form.value.counterBid || ""));
+    // fd.append("userId", userId);
+    // fd.append("userEmail", currentOffer.value.customer?.email || "");
+    // fd.append("dealerId", dealerId);
+    // fd.append("dealerName", dealerName);
+    // fd.append("dealerEmail", dealerEmail);
+    // fd.append("carId", carId);
+    fd.append("userBidId", bidId);
+    // fd.append("dealerAction", "counter");
+    fd.append("offerAmount", String(form.value.counterBid || ""));
     fd.append("dealerMsrp", String(form.value.dealerMsrp || ""));
-    fd.append("tradeInOffer", String(form.value.tradeInOffer || ""));
-    fd.append("dealerComments", form.value.dealerComments || "");
-    fd.append("userDetails", userDetails);
-    fd.append("options", "[]");
+    // fd.append("tradeInOffer", String(form.value.tradeInOffer || ""));
+    fd.append("comments", form.value.dealerComments || "");
+    // fd.append("userDetails", userDetails);
+    fd.append("metadata", JSON.stringify(metadata));
+    // fd.append("options", "[]");
    if (form.value.files && form.value.files.length) {
        form.value.files.forEach((file, index) => {
        fd.append(`file${index}`, file);
   });
 }
 
-    await apiPostForm("/bid/dealer-bid-counter", fd);
+    await apiPostForm("/bid/v2/dealer/counter", fd);
     await getAllOffers();
     form.value.files = [];
     fileName.value = "";
@@ -750,7 +776,7 @@ function closePreview() {
 }
 
 onMounted(() => {
-  getAllOffers();
+  getAllOffers(currentPage.value);
 });
 </script>
 
