@@ -602,7 +602,7 @@ const mapApiData = async (apiResponse) => {
     const latestUserOffer = source.carBid || item.latestUserOffer || "";
     const latestDealerOffer = item.metadata?.latestDealerOffer || item.latestDealerOffer || "";
     const latestUserComments = source.userComments || item.latestUserComments || "";
-    const latestDealerComments = item.latestDealerComments || "";
+    const latestDealerComments = item?.latestOfferId?.comments || "";
 
     // Status/flags
     const status = item.status || "";
