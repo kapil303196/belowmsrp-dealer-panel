@@ -601,8 +601,8 @@ const mapApiData = async (apiResponse) => {
     // Counter/user/dealer comments and offers
     const latestUserOffer = source.carBid || item.latestUserOffer || "";
     const latestDealerOffer = item.metadata?.latestDealerOffer || item.latestDealerOffer || "";
-    const latestUserComments = source.userComments || item.latestUserComments || "";
-    const latestDealerComments = item?.latestOfferId?.comments || "";
+    const latestUserComments = item?.status == 'USER_COUNTERED' ? source.userComments || item.latestUserComments || "" : '';
+    const latestDealerComments = item?.status == 'USER_COUNTERED' ? '' : item?.latestOfferId?.comments || "";
 
     // Status/flags
     const status = item.status || "";

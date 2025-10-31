@@ -97,12 +97,12 @@
               </button>
             </th>
             <!-- Your Build MSRP column removed -->
-            <th class="px-[14px] py-2 font-normal">
+            <!-- <th class="px-[14px] py-2 font-normal">
               <button>
                 User Comments
                 <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
               </button>
-            </th>
+            </th> -->
             <!-- Selected Options column removed -->
             <th class="px-[14px] py-2 font-normal">
               <button>
@@ -135,7 +135,7 @@
             <!-- Location cell removed -->
             <td class="px-[14px] py-2 text-sm font-medium">${{ offer.userOffer }}</td>
             <!-- Your Build MSRP cell removed -->
-            <td class="px-[14px] py-2 text-sm">{{ offer.comments }}</td>
+            <!-- <td class="px-[14px] py-2 text-sm">{{ offer.comments }}</td> -->
             <!-- Selected Options cell removed -->
             <td class="px-[14px] py-2 rounded-r-[10px]">
               <button>
@@ -316,7 +316,7 @@ const mapApiData = async (apiResponse) => {
         creditScore: userCreditScore.hasCreditScore ? userCreditScore.creditScoreTier : "Not Available",
       },
       location: "13th Street 47 ",
-      userOffer: Number(source.carBid || source.latestUserOffer || 0).toLocaleString(),
+      userOffer:item?.status == 'USER_ACCEPTED'? Number(item?.metadata?.latestDealerOffer || item?.metadata?.latestUserOffer || 0).toLocaleString() : Number(item?.metadata?.latestUserOffer || item?.metadata?.latestDealerOffer || 0).toLocaleString(),
       msrp: Number(source.carMsrp || source.msrp || 0).toLocaleString(),
       comments: source.userComments || item.latestUserComments || "",
       selectedOptions: getSelectedOptionsText(source.variants || source.userVariants || []),

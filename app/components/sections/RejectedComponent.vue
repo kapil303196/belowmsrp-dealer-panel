@@ -79,12 +79,12 @@
               </button>
             </th>
             <!-- Your Build MSRP column removed -->
-            <th class="px-[14px] py-2 font-normal">
+            <!-- <th class="px-[14px] py-2 font-normal">
               <button>
                 User Comments
                 <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
               </button>
-            </th>
+            </th> -->
           </tr>
         </thead>
         <tbody>
@@ -108,7 +108,7 @@
             <!-- Location cell removed -->
             <td class="px-[14px] py-2 text-sm font-medium">${{ offer.userOffer }}</td>
             <!-- Your Build MSRP cell removed -->
-            <td class="px-[14px] py-2 text-sm">{{ offer.comments }}</td>
+            <!-- <td class="px-[14px] py-2 text-sm">{{ offer.comments }}</td> -->
           </tr>
         </tbody>
       </table>
