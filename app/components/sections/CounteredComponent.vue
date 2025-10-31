@@ -222,6 +222,16 @@
                 class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"
               />
             </div>
+             <div>
+              <label class="block text-sm font-medium text-primary mb-1">Trade In Counter Offer</label>
+              <input
+                v-model="form.tradeInOffer"
+                type="number"
+                min="0"
+                placeholder="Enter Dealer's Car MSRP"
+                class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </div>
             <div>
               <label class="block text-sm font-medium text-primary mb-1">Attachment (optional)</label>
               <div class="w-full h-12 rounded-lg border border-[#DBE4F2] flex items-center px-2">
@@ -377,14 +387,14 @@ const rejectUserCounter = async (offer) => {
 const showCounter = ref(false);
 const isSubmitting = ref(false);
 const currentOffer = ref(null);
-const form = ref({ counterBid: "", dealerMsrp: "", dealerComments: "", file: null });
+const form = ref({ counterBid: "", dealerMsrp: "", tradeInOffer: "", dealerComments: "", file: null });
 const fileName = ref("");
 const fileInputRef = ref(null);
 const fileInput = computed(() => fileInputRef.value);
 
 function openCounterModal(offer) {
   currentOffer.value = offer;
-  form.value = { counterBid: "", dealerMsrp: "", dealerComments: "", file: null };
+  form.value = { counterBid: "",  tradeInOffer: "",dealerMsrp: "", dealerComments: "", file: null };
   fileName.value = "";
   form.value.files = [];
   fileName.value = "";
@@ -422,7 +432,7 @@ const submitCounter = async () => {
     console.log('counter',currentOffer.value)
     const metadata = {
       dealerMsrp: form.value.dealerMsrp || "",
-      tradeInOffer: currentOffer.value?.tradeInOffer || "",
+      tradeInOffer: form.value?.tradeInOffer || "",
       // deliveryFee: form.value.deliveryFee || ""
     }
     const fd = new FormData();
