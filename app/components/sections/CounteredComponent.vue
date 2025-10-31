@@ -419,9 +419,10 @@ const submitCounter = async () => {
       isSubmitting.value = false;
       return;
     }
+    console.log('counter',currentOffer.value)
     const metadata = {
       dealerMsrp: form.value.dealerMsrp || "",
-      tradeInOffer: form.value.tradeInOffer || "",
+      tradeInOffer: currentOffer.value?.tradeInOffer || "",
       // deliveryFee: form.value.deliveryFee || ""
     }
     const fd = new FormData();
@@ -599,9 +600,9 @@ const mapApiData = async (apiResponse) => {
     const userCreditScore = (userId && creditScores[userId]) ? creditScores[userId] : { hasCreditScore: false, creditScoreTier: null };
 
     // Counter/user/dealer comments and offers
-    const latestUserOffer = source.carBid || item.latestUserOffer || "";
+    const latestUserOffer = item.metadata?.latestUserOffer || source.carBid || item.latestUserOffer || "";
     const latestDealerOffer = item.metadata?.latestDealerOffer || item.latestDealerOffer || "";
-    const latestUserComments = item?.status == 'USER_COUNTERED' ? source.userComments || item.latestUserComments || "" : '';
+    const latestUserComments = item?.status == 'USER_COUNTERED' ? item?.latestOfferId?.comments || source.userComments || item.latestUserComments || "" : '';
     const latestDealerComments = item?.status == 'USER_COUNTERED' ? '' : item?.latestOfferId?.comments || "";
 
     // Status/flags
@@ -612,7 +613,7 @@ const mapApiData = async (apiResponse) => {
     // Model/brand
     const model = source.carName || source.carname || source.model || "";
     const brand = (source.carName || source.carname || "").split(" ")[0] || "";
-
+    const tradeInOffer = item?.latestOfferId?.metadata?.tradeInOffer
     return {
       image: source.carImage || source.image || "",
       model,
@@ -639,6 +640,7 @@ const mapApiData = async (apiResponse) => {
       carId: carId,
       bidId,
       userAction,
+      tradeInOffer
       // _flags: parseLatestFlagsFromStatus(status), // optional, not used in UI
     };
   });
