@@ -138,8 +138,12 @@
             <!-- <td class="px-[14px] py-2 text-sm">{{ offer.comments }}</td> -->
             <!-- Selected Options cell removed -->
             <td class="px-[14px] py-2 rounded-r-[10px]">
-              <button>
-                <img src="../../assets/images/icons/download-icon.svg" alt="icon" />
+              <button @click="previewPdf(offer)">
+                 <svg v-if="isDownloading(offer)" class="animate-spin h-5 w-5 text-primary" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+                <img v-else src="../../assets/images/icons/download-icon.svg" alt="icon" />
               </button>
             </td>
           </tr>
@@ -148,13 +152,34 @@
     </div>
     <!-- Pagination Controls -->
     <UiPaginationBar v-if="!isLoading && serverTotalPages > 0" :currentPage="currentPage" :totalPages="serverTotalPages" :totalEntries="totalEntries" @goToPage="goToPage" />
+    <UiPaginationBar v-if="!isLoading && totalPages > 0" :currentPage="currentPage" :totalPages="totalPages" :totalEntries="allOffers.length" @goToPage="goToPage" />
+      
+      <div v-if="showPreviewModal" class="fixed inset-0 z-[100] flex items-center justify-center">
+      <div class="absolute inset-0 bg-black/50" @click="closePreview"></div>
+      <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-4xl mx-4 p-4 h-[80vh] flex flex-col">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-lg font-semibold text-primary">Attachment Preview</h3>
+          <button class="text-primary/60 hover:text-primary" @click="closePreview">✕</button>
+        </div>
+        <div class="flex-1 overflow-hidden rounded-md border border-[#E5EAF3] bg-[#F8FAFF]">
+          <img v-if="previewType.startsWith('image/')" :src="previewUrl" alt="attachment" class="w-full h-full object-contain" />
+          <iframe v-else :src="previewUrl" class="w-full h-full" />
+        </div>
+        <div class="mt-3 flex justify-end gap-2">
+          <button class="px-3 py-2 rounded-md bg-primary text-white text-sm" @click="closePreview">Close</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
 import { normalizeId } from "~/composables/useNormalizeId";
-
+const isPreviewing = ref(false);
+const showPreviewModal = ref(false);
+const previewUrl = ref("");
+const previewType = ref("");
 const dropdownOpen = ref(null);
 function toggleDropdown(type) {
   dropdownOpen.value = dropdownOpen.value === type ? null : type;
@@ -181,6 +206,9 @@ const isLoading = ref(false);
 const serverTotalPages = ref(1);
 const totalEntries = ref(0);
 
+// PDF download
+const downloadingIds = ref(new Set());
+const isDownloading = (offer) => downloadingIds.value.has(offer.bidId);
 const filteredOffers = computed(() => {
   const s = searchText.value.trim().toLowerCase();
   const modelFilter = selectedModel.value.trim().toLowerCase();
@@ -203,7 +231,7 @@ function goToPage(page) {
 }
 
 // API call to get accepted offers
-const { apiGet } = useApi();
+const { apiGet,apiGetBlob } = useApi();
 const { getMultipleUserCreditScores } = useCreditScore();
 
 const getAcceptedOffers = async (page = 1) => {
@@ -329,6 +357,39 @@ const mapApiData = async (apiResponse) => {
   });
 };
 
+const previewPdf = async (offer) => {
+  try {
+    console.log('offer',offer)
+    const bidId = offer.bidId || offer._id || offer.id;
+    if (!bidId) {
+      console.error("No bidId found for offer:", offer);
+      alert("Cannot preview PDF: No valid bid ID found for this offer.");
+      return;
+    }
+    downloadingIds.value.add(bidId);
+    const blob = await apiGetBlob(`/bid/user-bid/${bidId}/pdf`);
+    previewType.value = "application/pdf";
+    previewUrl.value = window.URL.createObjectURL(blob);
+    showPreviewModal.value = true;
+  } catch (e) {
+    console.error("Failed to preview PDF", e);
+    alert("Failed to preview PDF. Please try again.");
+  } finally {
+    const bidId = offer.bidId || offer._id;
+    downloadingIds.value.delete(bidId);
+  }
+};
+
+function closePreview() {
+  try {
+    if (previewUrl.value) {
+      window.URL.revokeObjectURL(previewUrl.value);
+    }
+  } catch (_) {}
+  previewUrl.value = "";
+  previewType.value = "";
+  showPreviewModal.value = false;
+}
 onMounted(() => {
   getAcceptedOffers(currentPage.value);
 });
