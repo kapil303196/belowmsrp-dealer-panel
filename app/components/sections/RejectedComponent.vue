@@ -264,7 +264,7 @@ const mapApiData = async (apiResponse) => {
         creditScore: userCreditScore.hasCreditScore ? userCreditScore.creditScoreTier : "Not Available",
       },
       location: "13th Street 47 ",
-      userOffer: Number(source.carBid || source.latestUserOffer || 0).toLocaleString(),
+      userOffer:item?.status == 'USER_REJECTED'? Number(item?.metadata?.latestDealerOffer || item?.metadata?.latestUserOffer || 0).toLocaleString() : Number(item?.metadata?.latestUserOffer || item?.metadata?.latestDealerOffer || item?.userBidId?.carBid).toLocaleString(),
       msrp: Number(source.carMsrp || source.msrp || 0).toLocaleString(),
       comments: source.userComments || item.latestUserComments || "",
       selectedOptions: getSelectedOptionsText(source.variants || source.userVariants || []),

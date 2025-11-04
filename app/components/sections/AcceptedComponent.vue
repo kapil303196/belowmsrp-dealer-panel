@@ -64,7 +64,7 @@
               <span>{{ offer.customer.creditScore }}</span>
             </div>
             <div class="flex justify-between rounded-lg border-none bg-white p-2">
-              <span class="text-[#081735] opacity-55">User Offer:</span>
+              <span class="text-[#081735] opacity-55">Offer Price:</span>
               <span class="font-semibold">${{ offer.userOffer }}</span>
             </div>
           </div>
@@ -92,7 +92,7 @@
             <!-- Location column removed -->
             <th class="px-[14px] py-2 font-normal">
               <button>
-                User Offer
+                Offer Price
                 <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
               </button>
             </th>
