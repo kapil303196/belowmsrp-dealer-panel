@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "site": "belowmsrp-dealer-app-v2",
+    "site": "belowmsrp-dealer-panel",
     "public": ".output/public",
     "ignore": [
       "firebase.json",
