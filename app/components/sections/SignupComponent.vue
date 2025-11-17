@@ -52,6 +52,51 @@
                     </div>
 
 
+                    <!-- Car Maker (Multi Select) -->
+                    <div class="relative">
+                    <label class="text-sm font-medium text-on-secondary">Car Makers</label>
+
+                    <div 
+                        class="relative w-full mt-2 border bg-white rounded-lg px-4 py-2 cursor-pointer"
+                        @click="dropdownOpen = !dropdownOpen"
+                    >
+
+                        <div class="flex flex-wrap gap-1">
+                        <span
+                            v-for="maker in form.carMakers"
+                            :key="maker"
+                            class="px-2 py-1 text-xs bg-secondary/10 rounded-md"
+                        >
+                            {{ maker }}
+                        </span>
+
+                        <span v-if="form.carMakers.length === 0" class="text-gray-400 text-sm">
+                            Select car makers
+                        </span>
+                        </div>
+                    </div>
+
+                    <!-- Dropdown List -->
+                    <div
+                        v-if="dropdownOpen"
+                        class="absolute z-20 mt-1 w-full bg-white border border-border rounded-lg shadow max-h-48 overflow-auto"
+                    >
+                        <div
+                        v-for="item in cars"
+                        :key="item._id"
+                        class="px-4 py-2 hover:bg-gray-100 flex items-center gap-2 cursor-pointer"
+                        @click="toggleMaker(item.name)"
+                        >
+                        <input
+                            type="checkbox"
+                            class="cursor-pointer"
+                            :checked="form.carMakers.includes(item.name)"
+                        />
+                        <span>{{ item.name }}</span>
+                        </div>
+                    </div>
+                    </div>
+
                     <!-- Dealer License Number -->
                     <div>
                         <label class="text-sm font-medium text-on-secondary">Dealer License Number *</label>
@@ -147,9 +192,10 @@ import CreditModalAddressInput from '../SeggestionInput/CreditModalAddressInput.
 const isSubmitting = ref(false)
 const router = useRouter()
 const { authenticated, user } = useAuth()
-const { apiPost } = useApi()
+const { apiPost , apiGet} = useApi()
 const isShowPassword = ref(false)
-
+const dropdownOpen = ref(false)
+const cars = ref([])
 const form = reactive({
     dealershipName: '',
     fullName: '',
@@ -159,7 +205,8 @@ const form = reactive({
     licenseNumber: '',
     email: '',
     phone: '',
-    password: ''
+    password: '',
+    carMakers: [] 
 })
 
 function onLogoChange(e) {
@@ -208,7 +255,8 @@ async function handleSubmit() {
             email: form.email,
             contactPhone: form.phone,
             logoDataUrl: form.logoPreview || null,
-            password: form.password
+            password: form.password,
+            dealerForCompanies: form.carMakers
         }
 
         const response = await apiPost('/auth/dealer-signup', payload)
@@ -244,6 +292,25 @@ async function handleSubmit() {
         isSubmitting.value = false
     }
 }
+
+
+function toggleMaker(name) {
+  const index = form.carMakers.indexOf(name)
+  if (index === -1) {
+    form.carMakers.push(name)
+  } else {
+    form.carMakers.splice(index, 1)
+  }
+}
+
+onMounted(async () => {
+  try {
+    const res = await apiGet('/product/getCarMaker')
+    cars.value = res?.data || res || []
+  } catch (err) {
+    console.error("Failed to load car makers:", err)
+  }
+})
 </script>
 
 <style scoped>

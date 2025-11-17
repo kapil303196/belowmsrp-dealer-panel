@@ -70,6 +70,7 @@
                 <div>
                   <div class="font-medium">{{ offer.customer.name }}</div>
                   <div class="text-primary/80">Credit Score: {{ offer.customer.creditScore === '0' ? 'Not Available' : offer.customer.creditScore }}</div>
+                  <div class="text-primary/80">Open To Leasing: {{ offer?.customer?.leasing || 'No' }}</div>
                   <div class="text-primary/70">Submitted: {{ offer.submissionDate }}</div>
                 </div>
                 <div v-if="offer.comments" class="text-sm bg-white/50 rounded p-2">
@@ -182,6 +183,10 @@
             <div class="flex justify-between py-[6px]">
               <span class="text-[#081735] opacity-55">Credit Score:</span>
               <span>{{ offer.customer.creditScore }}</span>
+            </div>
+            <div class="flex justify-between py-[6px]">
+              <span class="text-[#081735] opacity-55">Open To Leasing:</span>
+              <span>{{ offer?.customer?.leasing || 'No' }}</span>
             </div>
             <div class="rounded-lg border-none bg-white p-2 mt-3">
               <div class="flex justify-between border-none p-2">
@@ -548,6 +553,9 @@ const mapAllOffersApiData = (apiResponse) => {
           return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
         })(),
         email: item.userEmail || "",
+        leasing: item?.userId?.leasing
+        ? item.userId.leasing.charAt(0).toUpperCase() + item.userId.leasing.slice(1)
+        : "No",
         phone: "",
         creditScore: item?.userId?.softPullReport?.reportData?.intelligence?.name || '0',
       },
