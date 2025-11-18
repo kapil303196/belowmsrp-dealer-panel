@@ -388,7 +388,7 @@ if (typeof window !== "undefined") {
 }
 
 // page size is driven by backend 'limit' param
-const serverPageSize = ref(5);
+const serverPageSize = ref(10);
 
 const currentPage = ref(1);
 const allOffers = ref([]);
