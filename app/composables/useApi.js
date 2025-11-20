@@ -100,6 +100,21 @@ export const useApi = () => {
     }
   }
 
+  const apiPatch = async (endpoint, data) => {
+    try {
+      const response = await $fetch(`${apiBaseUrl}${endpoint}`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: data
+      })
+      return response
+    } catch (error) {
+      console.error('API PUT Error:', error)
+      const apiMessage = error.data?.data?.message || 'Something went wrong'
+      throw new Error(apiMessage)
+    }
+  }
+
   const apiDelete = async (endpoint) => {
     try {
       const response = await $fetch(`${apiBaseUrl}${endpoint}`, {
@@ -121,6 +136,7 @@ export const useApi = () => {
     apiDelete,
     getAuthHeaders,
     apiPostForm,
-    apiGetBlob
+    apiGetBlob,
+    apiPatch
   }
 } 
