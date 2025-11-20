@@ -87,6 +87,7 @@ const navLinks = [
     { to: '/accepted', label: 'Accepted', icon: acceptedIcon },
     { to: '/rejected', label: 'Rejected', icon: rejectedIcon },
     { to: '/countered', label: 'Countered', icon: counteredIcon },
+    { to: '/manage-inventory', label: 'Manage Inventory', icon: null },
 ];
 
 const rightIcons = [

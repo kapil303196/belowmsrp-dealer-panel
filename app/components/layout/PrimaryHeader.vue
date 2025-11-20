@@ -50,6 +50,7 @@ import allOffersIcon from '~/assets/images/icons/all-offers-icon.svg';
 import searchIcon from '~/assets/images/icons/search-icon-primary.svg';
 import typeIcon from '~/assets/images/icons/type-icon-primary.svg';
 import chatIcon from '~/assets/images/icons/chat-icon-primary.svg';
+import vehicleIcon from '~/assets/images/icons/vehicle-logo.svg';
 
 const $route = useRoute()
 
@@ -71,9 +72,9 @@ const navLinksMobile = [
         icon: searchIcon
     },
     {
-        to: '#',
-        label: 'Types',
-        icon: typeIcon
+        to: '/manage-inventory',
+        label: 'Inventory',
+        icon: vehicleIcon
     },
     {
         to: '#',

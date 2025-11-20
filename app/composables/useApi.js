@@ -100,6 +100,21 @@ export const useApi = () => {
     }
   }
 
+  const apiPutForm = async (endpoint, formData) => {
+    try {
+      const response = await $fetch(`${apiBaseUrl}${endpoint}`, {
+        method: 'PUT',
+        headers: getAuthHeaders({ omitContentType: true }),
+        body: formData
+      })
+      return response
+    } catch (error) {
+      console.error('API PUT (form) Error:', error)
+      const apiMessage = error.data?.data?.message || 'Something went wrong'
+      throw new Error(apiMessage)
+    }
+  }
+
   const apiDelete = async (endpoint) => {
     try {
       const response = await $fetch(`${apiBaseUrl}${endpoint}`, {
@@ -121,6 +136,7 @@ export const useApi = () => {
     apiDelete,
     getAuthHeaders,
     apiPostForm,
+    apiPutForm,
     apiGetBlob
   }
 } 
