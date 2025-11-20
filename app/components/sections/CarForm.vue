@@ -253,10 +253,18 @@ const fetchModels = async (makeId) => {
   }
 };
 
+// Track if we're initializing in edit mode
+const isInitializing = ref(false);
+
 // Watch for make changes to fetch models
-watch(() => form.value.make, (newMakeId) => {
-  console.log('Make changed to:', newMakeId);
-  form.value.model = ''; // Reset model
+watch(() => form.value.make, (newMakeId, oldMakeId) => {
+  console.log('Make changed to:', newMakeId, 'from:', oldMakeId);
+  
+  // Don't reset model if we're initializing in edit mode
+  if (!isInitializing.value) {
+    form.value.model = ''; // Reset model
+  }
+  
   if (newMakeId) {
     fetchModels(newMakeId);
   } else {
@@ -321,6 +329,9 @@ onMounted(async () => {
   await fetchMakes();
 
   if (props.editMode && props.initialData) {
+    // Set flag to prevent watcher from clearing model
+    isInitializing.value = true;
+    
     // Populate form
     form.value = {
       ...props.initialData,
@@ -331,6 +342,8 @@ onMounted(async () => {
     // Fetch models for the selected make
     if (form.value.make) {
       await fetchModels(form.value.make);
+      // Clear initialization flag after models are loaded
+      isInitializing.value = false;
     }
 
     // Populate imagesState with existing images
