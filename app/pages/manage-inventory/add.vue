@@ -1,13 +1,14 @@
 <template>
-  <div class="pb-20">
+  <div class="pb-20 bg-gray-50 min-h-screen">
     <layout-app-header />
-    <div class="p-7 max-sm:p-5 max-sm:pt-0">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="mb-6">
-        <NuxtLink to="/manage-inventory" class="text-primary/60 hover:text-primary flex items-center gap-2 mb-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        <NuxtLink to="/manage-inventory" class="inline-flex items-center gap-2 text-gray-500 hover:text-secondary transition-colors mb-3 font-medium">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
           Back to Inventory
         </NuxtLink>
-        <h2 class="text-2xl font-semibold text-primary">Upload New Car</h2>
+        <h2 class="text-3xl font-bold text-gray-900">Upload New Vehicle</h2>
+        <p class="text-gray-500 mt-1">Add a new car to your dealership inventory.</p>
       </div>
       
       <SectionsCarForm
@@ -24,6 +25,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useApi } from '~/composables/useApi';
+import Swal from 'sweetalert2';
 
 const router = useRouter();
 const { apiPostForm } = useApi();
@@ -53,11 +55,25 @@ const handleSubmit = async (formData) => {
 
     await apiPostForm('/api/v1/dealer/inventory', fd);
     
+    await Swal.fire({
+      icon: 'success',
+      title: 'Vehicle Added!',
+      text: 'The car has been successfully added to your inventory.',
+      confirmButtonColor: '#3B82F6',
+      timer: 2000,
+      showConfirmButton: false
+    });
+    
     router.push('/manage-inventory');
     
   } catch (error) {
     console.error('Error adding car:', error);
-    alert('Failed to add car. Please try again.');
+    Swal.fire({
+      icon: 'error',
+      title: 'Submission Failed',
+      text: 'Failed to add car. Please try again.',
+      confirmButtonColor: '#3B82F6'
+    });
   } finally {
     isSubmitting.value = false;
   }
