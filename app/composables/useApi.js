@@ -100,6 +100,18 @@ export const useApi = () => {
     }
   }
 
+  const apiPatch = async (endpoint, data) => {
+    try {
+      const response = await $fetch(`${apiBaseUrl}${endpoint}`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: data
+      })
+      return response
+    } catch (error) {
+      console.error('API PUT Error:', error)
+    }
+  }
   const apiPutForm = async (endpoint, formData) => {
     try {
       const response = await $fetch(`${apiBaseUrl}${endpoint}`, {
@@ -136,6 +148,8 @@ export const useApi = () => {
     apiDelete,
     getAuthHeaders,
     apiPostForm,
+    apiGetBlob,
+    apiPatch,
     apiPutForm,
     apiGetBlob
   }

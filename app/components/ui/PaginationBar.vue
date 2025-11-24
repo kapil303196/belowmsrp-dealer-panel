@@ -1,5 +1,5 @@
 <template>
-  <div v-if="totalPages > 1" class="flex items-center justify-center gap-3 mt-4">
+  <div v-if="totalPages > 1" class="flex flex-wrap items-center justify-center gap-3 mt-4">
     <div class="flex items-center gap-5">
       <button :disabled="currentPage === 1" @click="$emit('goToPage', currentPage - 1)">
         <img src="~/assets/images/icons/prev-icon.svg" alt="">

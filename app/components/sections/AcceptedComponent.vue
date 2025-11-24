@@ -64,7 +64,7 @@
               <span>{{ offer.customer.creditScore }}</span>
             </div>
             <div class="flex justify-between rounded-lg border-none bg-white p-2">
-              <span class="text-[#081735] opacity-55">User Offer:</span>
+              <span class="text-[#081735] opacity-55">Offer Price:</span>
               <span class="font-semibold">${{ offer.userOffer }}</span>
             </div>
           </div>
@@ -92,17 +92,17 @@
             <!-- Location column removed -->
             <th class="px-[14px] py-2 font-normal">
               <button>
-                User Offer
+                Offer Price
                 <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
               </button>
             </th>
             <!-- Your Build MSRP column removed -->
-            <th class="px-[14px] py-2 font-normal">
+            <!-- <th class="px-[14px] py-2 font-normal">
               <button>
                 User Comments
                 <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
               </button>
-            </th>
+            </th> -->
             <!-- Selected Options column removed -->
             <th class="px-[14px] py-2 font-normal">
               <button>
@@ -135,11 +135,15 @@
             <!-- Location cell removed -->
             <td class="px-[14px] py-2 text-sm font-medium">${{ offer.userOffer }}</td>
             <!-- Your Build MSRP cell removed -->
-            <td class="px-[14px] py-2 text-sm">{{ offer.comments }}</td>
+            <!-- <td class="px-[14px] py-2 text-sm">{{ offer.comments }}</td> -->
             <!-- Selected Options cell removed -->
             <td class="px-[14px] py-2 rounded-r-[10px]">
-              <button>
-                <img src="../../assets/images/icons/download-icon.svg" alt="icon" />
+              <button @click="previewPdf(offer)">
+                 <svg v-if="isDownloading(offer)" class="animate-spin h-5 w-5 text-primary" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+                <img v-else src="../../assets/images/icons/download-icon.svg" alt="icon" />
               </button>
             </td>
           </tr>
@@ -147,14 +151,35 @@
       </table>
     </div>
     <!-- Pagination Controls -->
+    <UiPaginationBar v-if="!isLoading && serverTotalPages > 0" :currentPage="currentPage" :totalPages="serverTotalPages" :totalEntries="totalEntries" @goToPage="goToPage" />
     <UiPaginationBar v-if="!isLoading && totalPages > 0" :currentPage="currentPage" :totalPages="totalPages" :totalEntries="allOffers.length" @goToPage="goToPage" />
+      
+      <div v-if="showPreviewModal" class="fixed inset-0 z-[100] flex items-center justify-center">
+      <div class="absolute inset-0 bg-black/50" @click="closePreview"></div>
+      <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-4xl mx-4 p-4 h-[80vh] flex flex-col">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-lg font-semibold text-primary">Attachment Preview</h3>
+          <button class="text-primary/60 hover:text-primary" @click="closePreview">✕</button>
+        </div>
+        <div class="flex-1 overflow-hidden rounded-md border border-[#E5EAF3] bg-[#F8FAFF]">
+          <img v-if="previewType.startsWith('image/')" :src="previewUrl" alt="attachment" class="w-full h-full object-contain" />
+          <iframe v-else :src="previewUrl" class="w-full h-full" />
+        </div>
+        <div class="mt-3 flex justify-end gap-2">
+          <button class="px-3 py-2 rounded-md bg-primary text-white text-sm" @click="closePreview">Close</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
 import { normalizeId } from "~/composables/useNormalizeId";
-
+const isPreviewing = ref(false);
+const showPreviewModal = ref(false);
+const previewUrl = ref("");
+const previewType = ref("");
 const dropdownOpen = ref(null);
 function toggleDropdown(type) {
   dropdownOpen.value = dropdownOpen.value === type ? null : type;
@@ -170,13 +195,20 @@ if (typeof window !== "undefined") {
   });
 }
 
-const pageSize = 6;
+// server-driven page size (limit)
+const serverPageSize = ref(20);
 const currentPage = ref(1);
 const allOffers = ref([]);
 const searchText = ref("");
 const selectedModel = ref("");
 const isLoading = ref(false);
+// server pagination metadata
+const serverTotalPages = ref(1);
+const totalEntries = ref(0);
 
+// PDF download
+const downloadingIds = ref(new Set());
+const isDownloading = (offer) => downloadingIds.value.has(offer.bidId);
 const filteredOffers = computed(() => {
   const s = searchText.value.trim().toLowerCase();
   const modelFilter = selectedModel.value.trim().toLowerCase();
@@ -189,29 +221,42 @@ const filteredOffers = computed(() => {
   });
 });
 
-const totalPages = computed(() => Math.ceil(filteredOffers.value.length / pageSize));
-
-const paginatedOffers = computed(() => {
-  const start = (currentPage.value - 1) * pageSize;
-  return filteredOffers.value.slice(start, start + pageSize);
-});
+// server pagination: display the fetched page (still allow local filtering on that page)
+const paginatedOffers = computed(() => filteredOffers.value);
 
 function goToPage(page) {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page;
+  if (page >= 1 && page <= serverTotalPages.value) {
+    getAcceptedOffers(page);
   }
 }
 
 // API call to get accepted offers
-const { apiGet } = useApi();
+const { apiGet,apiGetBlob } = useApi();
 const { getMultipleUserCreditScores } = useCreditScore();
 
-const getAcceptedOffers = async () => {
+const getAcceptedOffers = async (page = 1) => {
   try {
+    // reflect requested page immediately for UI
+    currentPage.value = page;
     isLoading.value = true;
-    const dealerId = JSON.parse(localStorage.getItem("auth")).user._id;
-    const response = await apiGet(`/bid/get-dealer-bid/accept/${dealerId}`);
-    allOffers.value = await mapApiData(response.data);
+
+    // only send pagination params to backend; keep search/model filtering local
+    const params = { page, limit: serverPageSize.value };
+    const qs = new URLSearchParams(params).toString();
+    const response = await apiGet(`/bid/v2/dealer/accepted-offers?${qs}`);
+
+    // read negotiations array (safe fallback)
+    const negotiationsArray = Array.isArray(response.data?.negotiations) ? response.data.negotiations : [];
+
+    // map and await results (mapApiData is async)
+    const mapped = await mapApiData(negotiationsArray);
+    allOffers.value = mapped;
+
+    // pagination metadata from server (safe fallbacks)
+    const pagination = response.data?.pagination || {};
+    currentPage.value = Number(pagination.page) || page;
+    serverTotalPages.value = Number(pagination.totalPages) || Math.max(1, Math.ceil((Number(pagination.total) || negotiationsArray.length) / serverPageSize.value));
+    totalEntries.value = Number(pagination.total) || negotiationsArray.length;
   } catch (error) {
     console.error("Error fetching accepted offers:", error);
   } finally {
@@ -238,10 +283,18 @@ const getSelectedOptionsText = (variants) => {
     .join(", ");
 };
 
+// Make mapApiData resilient to negotiation items (with userBidId & userId) or older shapes
 const mapApiData = async (apiResponse) => {
-  // Extract user IDs for credit score lookup
+  // Collect userIds from multiple possible locations
   const userIds = apiResponse
-    .map((item) => (item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null))
+    .map((item) => {
+      const uid =
+        (item.userId && (item.userId._id || item.userId)) || // negotiation.userId object or id
+        (item.userBidId && (item.userBidId.userId || item.userBidId.userId?._id)) || // nested userBidId.userId
+        (item.customerDetails && item.customerDetails.userId) ||
+        null;
+      return uid ? normalizeId(uid) : null;
+    })
     .filter((id) => id)
     .map((id) => String(id));
 
@@ -256,48 +309,104 @@ const mapApiData = async (apiResponse) => {
   }
 
   return apiResponse.map((item) => {
-    // Get the first user offer from negotiation history to extract bid details
-    const userOffer = item.negotiationHistory?.find((h) => h.type === "user_offer");
-    const bidId = userOffer?.bidId ? normalizeId(userOffer.bidId) : null;
+    // support both negotiation-style objects and older flat items
+    const source = item.userBidId || item; // userBidId contains carName, carImage, etc when present
+    const userObj = item.userId || item.customerDetails || source.userId || null;
 
-    // Extract userId properly - handle both string and object formats
-    const userId = item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null;
+    // attempt to determine bidId and carId
+    const bidId = source._id ? normalizeId(source._id) : item._id ? normalizeId(item._id) : null;
+    const carId = item.carId || source.carId || null;
 
-    const userCreditScore = creditScores[userId] || { hasCreditScore: false, creditScoreTier: null };
+    // prefer user fullName from item.userId (negotiation) then source/user fields
+    const customerName =
+      (userObj && (userObj.fullName || userObj.name)) ||
+      source.userName ||
+      (item.customerDetails && item.customerDetails.fullName) ||
+      "Unknown Customer";
+
+    const userId = (userObj && (userObj._id || userObj)) ? normalizeId(userObj._id || userObj) : null;
+    const userCreditScore = (userId && creditScores[userId]) ? creditScores[userId] : { hasCreditScore: false, creditScoreTier: null };
 
     return {
-      image: item.image || "",
-      model: item.carname || "",
-      brand: item.carname?.split(" ")[0] || "",
-      price: `$${Number(item.msrp || 0).toLocaleString()}.00`,
+      image: source.carImage || source.image || "",
+      model: source.carName || source.carname || source.model || "",
+      brand: (source.carName || source.carname || "").split(" ")[0] || "",
+      price: `$${Number(source.carMsrp || source.msrp || 0).toLocaleString()}.00`,
       customer: {
-        name: item.customerDetails?.fullName
-          ? (() => {
-              const nameParts = item.customerDetails.fullName.trim().split(/\s+/);
-              if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
-              return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
-            })()
-          : "Unknown Customer",
-        email: item.customerDetails?.email || "",
-        phone: item.customerDetails?.phoneNumber || "",
+        name: (() => {
+          if (!customerName) return "Unknown Customer";
+          const nameParts = String(customerName).trim().split(/\s+/);
+          if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+          return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
+        })(),
+        email: (userObj && (userObj.email || userObj.userEmail)) || source.userEmail || (item.customerDetails && item.customerDetails.email) || "",
+        phone: (userObj && (userObj.phoneNumber || userObj.phone)) || (item.customerDetails && item.customerDetails.phoneNumber) || "",
         creditScore: userCreditScore.hasCreditScore ? userCreditScore.creditScoreTier : "Not Available",
       },
       location: "13th Street 47 ",
-      userOffer: Number(item.latestUserOffer || 0).toLocaleString(),
-      msrp: Number(item.msrp || 0).toLocaleString(),
-      comments: item.latestUserComments || "",
-      selectedOptions: getSelectedOptionsText(item.userVariants || []),
+      userOffer:item?.status == 'USER_ACCEPTED'? Number(item?.metadata?.latestDealerOffer || item?.metadata?.latestUserOffer || 0).toLocaleString() : Number(item?.metadata?.latestUserOffer || item?.metadata?.latestDealerOffer || 0).toLocaleString(),
+      msrp: Number(source.carMsrp || source.msrp || 0).toLocaleString(),
+      comments: source.userComments || item.latestUserComments || "",
+      selectedOptions: getSelectedOptionsText(source.variants || source.userVariants || []),
       status: item.status || "Accepted",
       bidId: bidId,
-      carId: item.id,
+      carId: carId,
       userId: userId || "",
       dealerId: JSON.parse(localStorage.getItem("auth") || "{}")?.user?._id || "",
     };
   });
 };
 
+const previewPdf = async (offer) => {
+  try {
+    console.log('offer',offer)
+    const bidId = offer.bidId || offer._id || offer.id;
+    if (!bidId) {
+      console.error("No bidId found for offer:", offer);
+      alert("Cannot preview PDF: No valid bid ID found for this offer.");
+      return;
+    }
+    downloadingIds.value.add(bidId);
+    const blob = await apiGetBlob(`/bid/user-bid/${bidId}/pdf`);
+    previewType.value = "application/pdf";
+    previewUrl.value = window.URL.createObjectURL(blob);
+    showPreviewModal.value = true;
+  } catch (e) {
+    console.error("Failed to preview PDF", e);
+    alert("Failed to preview PDF. Please try again.");
+  } finally {
+    const bidId = offer.bidId || offer._id;
+    downloadingIds.value.delete(bidId);
+  }
+};
+
+function closePreview() {
+  try {
+    if (previewUrl.value) {
+      window.URL.revokeObjectURL(previewUrl.value);
+    }
+  } catch (_) {}
+  previewUrl.value = "";
+  previewType.value = "";
+  showPreviewModal.value = false;
+}
 onMounted(() => {
-  getAcceptedOffers();
+  getAcceptedOffers(currentPage.value);
+});
+
+// debounce timer for filter changes
+const filterTimer = ref(null);
+watch([searchText, selectedModel], () => {
+  if (filterTimer.value) clearTimeout(filterTimer.value);
+  // debounced: only reset current page (do NOT call the API) so filtering stays local
+  filterTimer.value = setTimeout(() => {
+    currentPage.value = 1;
+    filterTimer.value = null;
+  }, 400);
+});
+
+onBeforeUnmount(() => {
+  if (filterTimer.value) clearTimeout(filterTimer.value);
 });
 </script>
 

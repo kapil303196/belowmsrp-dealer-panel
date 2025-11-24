@@ -77,7 +77,7 @@
 
         <!-- Mobile Actions -->
         <div v-if="offer.dealerAction === 'user-counter' && !isOfferAccepted(offer) && !isOfferRejected(offer)" class="flex gap-2 mt-3">
-          <!-- <button @click="acceptUserCounter(offer)" class="flex-1 px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 action-btn">Accept</button> -->
+          <button @click="acceptUserCounter(offer)" class="flex-1 px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 action-btn">Accept</button>
           <button @click="rejectUserCounter(offer)" class="flex-1 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 action-btn">Reject</button>
           <button @click="openCounterModal(offer)" class="flex-1 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 action-btn">Counter</button>
         </div>
@@ -165,9 +165,9 @@
             <td class="px-[14px] py-2 text-sm">
               <!-- Show different actions based on the current state -->
               <div v-if="offer.dealerAction === 'user-counter' && !isOfferAccepted(offer) && !isOfferRejected(offer)" class="flex items-center gap-1">
-                <!-- <button @click="acceptUserCounter(offer)" class="relative w-[38px] h-10 border border-[#2C8436] rounded-lg flex items-center justify-center flex-none">
+                <button @click="acceptUserCounter(offer)" class="relative w-[38px] h-10 border border-[#2C8436] rounded-lg flex items-center justify-center flex-none">
                   <img src="../../assets/images/icons/green-check.svg" alt="icon" class="w-5 h-5" />
-                </button> -->
+                </button>
                 <button @click="rejectUserCounter(offer)" class="relative w-[38px] h-10 border border-[#D53660] rounded-lg flex items-center justify-center flex-none">
                   <img src="../../assets/images/icons/cross-icon.svg" alt="icon" class="w-5 h-5" />
                 </button>
@@ -222,6 +222,16 @@
                 class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"
               />
             </div>
+             <div>
+              <label class="block text-sm font-medium text-primary mb-1">Trade In Counter Offer</label>
+              <input
+                v-model="form.tradeInOffer"
+                type="number"
+                min="0"
+                placeholder="Enter Dealer's Car MSRP"
+                class="w-full h-12 px-3 rounded-lg border border-[#DBE4F2] focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </div>
             <div>
               <label class="block text-sm font-medium text-primary mb-1">Attachment (optional)</label>
               <div class="w-full h-12 rounded-lg border border-[#DBE4F2] flex items-center px-2">
@@ -251,7 +261,7 @@
     </div>
 
     <!-- Pagination Controls -->
-    <UiPaginationBar v-if="!isLoading && totalPages > 0" :currentPage="currentPage" :totalPages="totalPages" :totalEntries="allOffers.length" @goToPage="goToPage" />
+    <UiPaginationBar v-if="!isLoading && serverTotalPages > 0" :currentPage="currentPage" :totalPages="serverTotalPages" :totalEntries="totalEntries" @goToPage="goToPage" />
 
     <!-- Attachment/PDF Preview Modal -->
     <div v-if="showPreviewModal" class="fixed inset-0 z-[1000] flex items-center justify-center">
@@ -274,7 +284,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
 import { useApi } from "~/composables/useApi";
 import { normalizeId } from "~/composables/useNormalizeId";
 import Swal from "sweetalert2";
@@ -294,12 +304,15 @@ if (typeof window !== "undefined") {
   });
 }
 
-const pageSize = 10;
+// Use server-driven pagination
+const serverPageSize = ref(10);
 const currentPage = ref(1);
 const allOffers = ref([]);
 const searchText = ref("");
 const selectedModel = ref("");
 const isLoading = ref(false);
+const serverTotalPages = ref(1);
+const totalEntries = ref(0);
 
 const filteredOffers = computed(() => {
   const s = searchText.value.trim().toLowerCase();
@@ -313,16 +326,11 @@ const filteredOffers = computed(() => {
   });
 });
 
-const totalPages = computed(() => Math.ceil(filteredOffers.value.length / pageSize));
-
-const paginatedOffers = computed(() => {
-  const start = (currentPage.value - 1) * pageSize;
-  return filteredOffers.value.slice(start, start + pageSize);
-});
+const paginatedOffers = computed(() => filteredOffers.value);
 
 function goToPage(page) {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page;
+  if (page >= 1 && page <= serverTotalPages.value) {
+    getCounteredOffers(page);
   }
 }
 
@@ -341,13 +349,13 @@ const acceptUserCounter = async (offer) => {
       return;
     }
     const payload = {
-      dealerId,
-      carId: offer.carId,
-      bidId: offer.bidId,
-      dealerAction: "accept",
+      // dealerId,
+      // carId: offer.carId,
+      userBidId : offer.bidId,
+      // dealerAction: "accept",
     };
     if (offer?.userId) payload.userId = offer.userId;
-    await apiPost("/bid/dealer-bid-action", payload);
+    await apiPost("/bid/v2/dealer/accept", payload);
     await getCounteredOffers();
   } catch (error) {
     console.error("Error accepting user counter:", error);
@@ -362,13 +370,13 @@ const rejectUserCounter = async (offer) => {
       return;
     }
     const payload = {
-      dealerId,
-      carId: offer.carId,
-      bidId: offer.bidId,
-      dealerAction: "reject",
+      // dealerId,
+      // carId: offer.carId,
+      userBidId: offer.bidId,
+      // dealerAction: "reject",
     };
-    if (offer?.userId) payload.userId = offer.userId;
-    await apiPost("/bid/dealer-bid-action", payload);
+    // if (offer?.userId) payload.userId = offer.userId;
+    await apiPost("/bid/v2/dealer/reject", payload);
     await getCounteredOffers();
   } catch (error) {
     console.error("Error rejecting user counter:", error);
@@ -379,14 +387,14 @@ const rejectUserCounter = async (offer) => {
 const showCounter = ref(false);
 const isSubmitting = ref(false);
 const currentOffer = ref(null);
-const form = ref({ counterBid: "", dealerMsrp: "", dealerComments: "", file: null });
+const form = ref({ counterBid: "", dealerMsrp: "", tradeInOffer: "", dealerComments: "", file: null });
 const fileName = ref("");
 const fileInputRef = ref(null);
 const fileInput = computed(() => fileInputRef.value);
 
 function openCounterModal(offer) {
   currentOffer.value = offer;
-  form.value = { counterBid: "", dealerMsrp: "", dealerComments: "", file: null };
+  form.value = { counterBid: "",  tradeInOffer: "",dealerMsrp: "", dealerComments: "", file: null };
   fileName.value = "";
   form.value.files = [];
   fileName.value = "";
@@ -421,22 +429,30 @@ const submitCounter = async () => {
       isSubmitting.value = false;
       return;
     }
+    console.log('counter',currentOffer.value)
+    const metadata = {
+      dealerMsrp: form.value.dealerMsrp || "",
+      tradeInOffer: form.value?.tradeInOffer || "",
+      // deliveryFee: form.value.deliveryFee || ""
+    }
     const fd = new FormData();
-    fd.append("dealerId", dealerId);
-    if (currentOffer.value?.userId) fd.append("userId", currentOffer.value.userId);
-    fd.append("carId", currentOffer.value.carId);
-    fd.append("bidId", currentOffer.value.bidId);
-    fd.append("dealerAction", "counter");
-    fd.append("counterBid", String(form.value.counterBid || ""));
+    // fd.append("dealerId", dealerId);
+    // if (currentOffer.value?.userId) fd.append("userId", currentOffer.value.userId);
+    // fd.append("carId", currentOffer.value.carId);
+    fd.append("userBidId", currentOffer.value.bidId);
+    // fd.append("dealerAction", "counter");
+    fd.append("offerAmount", String(form.value.counterBid || ""));
     fd.append("dealerMsrp", String(form.value.dealerMsrp || ""));
-    fd.append("dealerComments", form.value.dealerComments || "");
-    fd.append("options", "[]");
+    fd.append("comments", form.value.dealerComments || "");
+    // fd.append("options", "[]");
+    fd.append("metadata", JSON.stringify(metadata));
+
      if (form.value.files && form.value.files.length) {
        form.value.files.forEach((file, index) => {
        fd.append(`file${index}`, file);
      })};
 
-    await apiPostForm("/bid/dealer-bid-counter", fd);
+    await apiPostForm("/bid/v2/dealer/counter", fd);
     await getCounteredOffers();
     showCounter.value = false;
     Swal.fire("Success!", "Counter Offer Sent", "success");
@@ -448,12 +464,21 @@ const submitCounter = async () => {
   }
 };
 
-const getCounteredOffers = async () => {
+const getCounteredOffers = async (page = 1) => {
   try {
     isLoading.value = true;
-    const dealerId = JSON.parse(localStorage.getItem("auth")).user._id;
-    const response = await apiGet(`/bid/get-dealer-bid/counter/${dealerId}`);
-    allOffers.value = await mapApiData(response.data);
+    currentPage.value = page;
+    const params = { page, limit: serverPageSize.value };
+    const qs = new URLSearchParams(params).toString();
+    const response = await apiGet(`/bid/v2/dealer/countered-offers?${qs}`);
+    // Use negotiations array from API
+    const negotiationsArray = Array.isArray(response.data?.negotiations) ? response.data.negotiations : [];
+    allOffers.value = await mapApiData(negotiationsArray);
+    // Pagination metadata from server
+    const pagination = response.data?.pagination || {};
+    currentPage.value = Number(pagination.page) || page;
+    serverTotalPages.value = Number(pagination.totalPages) || Math.max(1, Math.ceil((Number(pagination.total) || negotiationsArray.length) / serverPageSize.value));
+    totalEntries.value = Number(pagination.total) || negotiationsArray.length;
   } catch (error) {
     console.error("Error fetching countered offers:", error);
   } finally {
@@ -548,13 +573,19 @@ function findLatestUserBidId(history = []) {
 }
 
 const mapApiData = async (apiResponse) => {
-  // Extract user IDs for credit score lookup
+  // Support negotiation-style objects (userBidId/userId) and flat items
   const userIds = (apiResponse || [])
-    .map((item) => (item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null))
+    .map((item) => {
+      const uid =
+        (item.userId && (item.userId._id || item.userId)) ||
+        (item.userBidId && (item.userBidId.userId || item.userBidId.userId?._id)) ||
+        (item.customerDetails && item.customerDetails.userId) ||
+        null;
+      return uid ? normalizeId(uid) : null;
+    })
     .filter((id) => id)
     .map((id) => String(id));
 
-  // Fetch credit scores for all users
   let creditScores = {};
   if (userIds.length > 0) {
     try {
@@ -565,56 +596,81 @@ const mapApiData = async (apiResponse) => {
   }
 
   return (apiResponse || []).map((item) => {
-    const flags = parseLatestFlagsFromStatus(item.status);
-    const dealerAction = deriveDealerActionFromHistory(item.negotiationHistory);
-    const userAction = deriveUserActionFromHistoryOrStatus(item.negotiationHistory, item.status);
-    const bidId = findLatestUserBidId(item.negotiationHistory) ? String(findLatestUserBidId(item.negotiationHistory)) : null;
-    const model = item.carname || "";
-    const brand = (model || "").split(" ")[0] || "";
-    const customerFullName = item.customerDetails?.fullName || "";
-    const customerEmail = item.customerDetails?.email || "";
-    const customerPhone = item.customerDetails?.phoneNumber || "";
-    const displayName = customerFullName
-      ? (() => {
-          const nameParts = customerFullName.trim().split(/\s+/);
-          if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
-          return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
-        })()
-      : "Unknown Customer";
+    // Prefer userBidId for car data if present
+    const source = item.userBidId || item;
+    const userObj = item.userId || item.customerDetails || source.userId || null;
+    const bidId = source._id ? normalizeId(source._id) : item._id ? normalizeId(item._id) : null;
+    const carId = item.carId || source.carId || "";
+    const customerName =
+      (userObj && (userObj.fullName || userObj.name)) ||
+      source.userName ||
+      (item.customerDetails && item.customerDetails.fullName) ||
+      "Unknown Customer";
+    const userId = (userObj && (userObj._id || userObj)) ? normalizeId(userObj._id || userObj) : null;
+    const userCreditScore = (userId && creditScores[userId]) ? creditScores[userId] : { hasCreditScore: false, creditScoreTier: null };
 
-    const userId = item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null;
+    // Counter/user/dealer comments and offers
+    const latestUserOffer = item.metadata?.latestUserOffer || source.carBid || item.latestUserOffer || "";
+    const latestDealerOffer = item.metadata?.latestDealerOffer || item.latestDealerOffer || "";
+    const latestUserComments = item?.status == 'USER_COUNTERED' ? item?.latestOfferId?.comments || source.userComments || item.latestUserComments || "" : '';
+    const latestDealerComments = item?.status == 'USER_COUNTERED' ? '' : item?.latestOfferId?.comments || "";
 
-    const userCreditScore = creditScores[userId] || { hasCreditScore: false, creditScoreTier: null };
+    // Status/flags
+    const status = item.status || "";
+    const dealerAction = item.dealerAction || "";
+    const userAction = item.userAction || "";
 
+    // Model/brand
+    const model = source.carName || source.carname || source.model || "";
+    const brand = (source.carName || source.carname || "").split(" ")[0] || "";
+    const tradeInOffer = item?.latestOfferId?.metadata?.tradeInOffer
     return {
-      image: item.image || "",
+      image: source.carImage || source.image || "",
       model,
       brand,
-      price: `$${Number(item.msrp || 0).toLocaleString()}.00`,
+      price: `$${Number(source.carMsrp || source.msrp || 0).toLocaleString()}.00`,
       customer: {
-        name: displayName,
-        email: customerEmail,
-        phone: customerPhone,
+        name: (() => {
+          if (!customerName) return "Unknown Customer";
+          const nameParts = String(customerName).trim().split(/\s+/);
+          if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+          return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
+        })(),
+        email: (userObj && (userObj.email || userObj.userEmail)) || source.userEmail || (item.customerDetails && item.customerDetails.email) || "",
+        phone: (userObj && (userObj.phoneNumber || userObj.phone)) || (item.customerDetails && item.customerDetails.phoneNumber) || "",
         creditScore: userCreditScore.hasCreditScore ? userCreditScore.creditScoreTier : "Not Available",
       },
-      userOffer: Number(item.latestUserOffer || 0).toLocaleString(),
-      counterOffer: Number(item.latestDealerOffer || 0).toLocaleString(),
-      dealerAction,
-      comments: item.latestUserComments || "",
-      DealerComments: item.latestDealerComments || "",
-      // Do not default a status; if empty/null, UI should hide it
-      status: item.status || "",
+      userOffer: Number(latestUserOffer || 0).toLocaleString(),
+      counterOffer: Number(latestDealerOffer || 0).toLocaleString(),
+      dealerAction: status === "USER_COUNTERED" ? "user-counter" : status === "DEALER_COUNTERED" ? "counter" : dealerAction,
+      comments: latestUserComments,
+      DealerComments: latestDealerComments,
+      status,
       userId: userId || "",
-      carId: item.id || "",
+      carId: carId,
       bidId,
       userAction,
-      _flags: flags,
+      tradeInOffer
+      // _flags: parseLatestFlagsFromStatus(status), // optional, not used in UI
     };
   });
 };
 
 onMounted(() => {
-  getCounteredOffers();
+  getCounteredOffers(currentPage.value);
+});
+
+// debounce timer for filter changes
+const filterTimer = ref(null);
+watch([searchText, selectedModel], () => {
+  if (filterTimer.value) clearTimeout(filterTimer.value);
+  filterTimer.value = setTimeout(() => {
+    currentPage.value = 1;
+    filterTimer.value = null;
+  }, 400);
+});
+onBeforeUnmount(() => {
+  if (filterTimer.value) clearTimeout(filterTimer.value);
 });
 </script>
 

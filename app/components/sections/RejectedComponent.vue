@@ -79,12 +79,12 @@
               </button>
             </th>
             <!-- Your Build MSRP column removed -->
-            <th class="px-[14px] py-2 font-normal">
+            <!-- <th class="px-[14px] py-2 font-normal">
               <button>
                 User Comments
                 <img class="inline ml-[10px] align-middle" src="~/assets/images/icons/filter-icon.svg" alt="" />
               </button>
-            </th>
+            </th> -->
           </tr>
         </thead>
         <tbody>
@@ -108,18 +108,19 @@
             <!-- Location cell removed -->
             <td class="px-[14px] py-2 text-sm font-medium">${{ offer.userOffer }}</td>
             <!-- Your Build MSRP cell removed -->
-            <td class="px-[14px] py-2 text-sm">{{ offer.comments }}</td>
+            <!-- <td class="px-[14px] py-2 text-sm">{{ offer.comments }}</td> -->
           </tr>
         </tbody>
       </table>
     </div>
     <!-- Pagination Controls -->
-    <UiPaginationBar v-if="!isLoading && totalPages > 0" :currentPage="currentPage" :totalPages="totalPages" :totalEntries="allOffers.length" @goToPage="goToPage" />
+    <UiPaginationBar v-if="!isLoading && serverTotalPages > 0" :currentPage="currentPage" :totalPages="serverTotalPages" :totalEntries="totalEntries" @goToPage="goToPage" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
+import { normalizeId } from "~/composables/useNormalizeId";
 
 const dropdownOpen = ref(null);
 function toggleDropdown(type) {
@@ -136,12 +137,14 @@ if (typeof window !== "undefined") {
   });
 }
 
-const pageSize = 6;
+const serverPageSize = ref(20);
 const currentPage = ref(1);
 const allOffers = ref([]);
 const searchText = ref("");
 const selectedModel = ref("");
 const isLoading = ref(false);
+const serverTotalPages = ref(1);
+const totalEntries = ref(0);
 
 const filteredOffers = computed(() => {
   const s = searchText.value.trim().toLowerCase();
@@ -154,31 +157,35 @@ const filteredOffers = computed(() => {
     return hay.includes(s);
   });
 });
-
-const totalPages = computed(() => Math.ceil(filteredOffers.value.length / pageSize));
-
-const paginatedOffers = computed(() => {
-  const start = (currentPage.value - 1) * pageSize;
-  return filteredOffers.value.slice(start, start + pageSize);
-});
+const paginatedOffers = computed(() => filteredOffers.value);
 
 function goToPage(page) {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page;
+  if (page >= 1 && page <= serverTotalPages.value) {
+    getRejectedOffers(page);
   }
 }
 
 // API call to get rejected offers
 const { apiGet } = useApi();
 const { getMultipleUserCreditScores } = useCreditScore();
-import { normalizeId } from "~/composables/useNormalizeId";
-
-const getRejectedOffers = async () => {
+const getRejectedOffers = async (page = 1) => {
   try {
+    currentPage.value = page;
     isLoading.value = true;
-    const dealerId = JSON.parse(localStorage.getItem("auth")).user._id;
-    const response = await apiGet(`/bid/get-dealer-bid/reject/${dealerId}`);
-    allOffers.value = await mapApiData(response.data);
+    // only send pagination params to backend; keep search/model filtering local
+    const params = { page, limit: serverPageSize.value };
+    const qs = new URLSearchParams(params).toString();
+    const response = await apiGet(`/bid/v2/dealer/rejected-offers?${qs}`);
+    // read negotiations array (safe fallback)
+    const negotiationsArray = Array.isArray(response.data?.negotiations) ? response.data.negotiations : [];
+    // map and await results (mapApiData is async)
+    const mapped = await mapApiData(negotiationsArray);
+    allOffers.value = mapped;
+    // pagination metadata from server (safe fallbacks)
+    const pagination = response.data?.pagination || {};
+    currentPage.value = Number(pagination.page) || page;
+    serverTotalPages.value = Number(pagination.totalPages) || Math.max(1, Math.ceil((Number(pagination.total) || negotiationsArray.length) / serverPageSize.value));
+    totalEntries.value = Number(pagination.total) || negotiationsArray.length;
   } catch (error) {
     console.error("Error fetching rejected offers:", error);
   } finally {
@@ -205,14 +212,20 @@ const getSelectedOptionsText = (variants) => {
     .join(", ");
 };
 
+// Support negotiation-style objects (userBidId/userId) and flat items
 const mapApiData = async (apiResponse) => {
-  // Extract user IDs for credit score lookup
   const userIds = apiResponse
-    .map((item) => (item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null))
+    .map((item) => {
+      const uid =
+        (item.userId && (item.userId._id || item.userId)) ||
+        (item.userBidId && (item.userBidId.userId || item.userBidId.userId?._id)) ||
+        (item.customerDetails && item.customerDetails.userId) ||
+        null;
+      return uid ? normalizeId(uid) : null;
+    })
     .filter((id) => id)
     .map((id) => String(id));
 
-  // Fetch credit scores for all users
   let creditScores = {};
   if (userIds.length > 0) {
     try {
@@ -223,40 +236,41 @@ const mapApiData = async (apiResponse) => {
   }
 
   return apiResponse.map((item) => {
-    // Get the first user offer from negotiation history to extract bid details
-    const userOffer = item.negotiationHistory?.find((h) => h.type === "user_offer");
-    const bidId = userOffer?.bidId ? String(userOffer.bidId) : null;
-
-    // Extract userId properly - handle both string and object formats
-    const userId = item.customerDetails?.userId ? normalizeId(item.customerDetails.userId) : null;
-
-    const userCreditScore = creditScores[userId] || { hasCreditScore: false, creditScoreTier: null };
-
+    const source = item.userBidId || item;
+    const userObj = item.userId || item.customerDetails || source.userId || null;
+    const bidId = source._id ? normalizeId(source._id) : item._id ? normalizeId(item._id) : null;
+    const carId = item.carId || source.carId || null;
+    const customerName =
+      (userObj && (userObj.fullName || userObj.name)) ||
+      source.userName ||
+      (item.customerDetails && item.customerDetails.fullName) ||
+      "Unknown Customer";
+    const userId = (userObj && (userObj._id || userObj)) ? normalizeId(userObj._id || userObj) : null;
+    const userCreditScore = (userId && creditScores[userId]) ? creditScores[userId] : { hasCreditScore: false, creditScoreTier: null };
     return {
-      image: item.image || "",
-      model: item.carname || "",
-      brand: item.carname?.split(" ")[0] || "",
-      price: `$${Number(item.msrp || 0).toLocaleString()}.00`,
+      image: source.carImage || source.image || "",
+      model: source.carName || source.carname || source.model || "",
+      brand: (source.carName || source.carname || "").split(" ")[0] || "",
+      price: `$${Number(source.carMsrp || source.msrp || 0).toLocaleString()}.00`,
       customer: {
-        name: item.customerDetails?.fullName
-          ? (() => {
-              const nameParts = item.customerDetails.fullName.trim().split(/\s+/);
-              if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
-              return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
-            })()
-          : "Unknown Customer",
-        email: item.customerDetails?.email || "",
-        phone: item.customerDetails?.phoneNumber || "",
+        name: (() => {
+          if (!customerName) return "Unknown Customer";
+          const nameParts = String(customerName).trim().split(/\s+/);
+          if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+          return `${nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase()} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`;
+        })(),
+        email: (userObj && (userObj.email || userObj.userEmail)) || source.userEmail || (item.customerDetails && item.customerDetails.email) || "",
+        phone: (userObj && (userObj.phoneNumber || userObj.phone)) || (item.customerDetails && item.customerDetails.phoneNumber) || "",
         creditScore: userCreditScore.hasCreditScore ? userCreditScore.creditScoreTier : "Not Available",
       },
       location: "13th Street 47 ",
-      userOffer: Number(item.latestUserOffer || 0).toLocaleString(),
-      msrp: Number(item.msrp || 0).toLocaleString(),
-      comments: item.latestUserComments || "",
-      selectedOptions: getSelectedOptionsText(item.userVariants || []),
+      userOffer:item?.status == 'USER_REJECTED'? Number(item?.metadata?.latestDealerOffer || item?.metadata?.latestUserOffer || 0).toLocaleString() : Number(item?.metadata?.latestUserOffer || item?.metadata?.latestDealerOffer || item?.userBidId?.carBid).toLocaleString(),
+      msrp: Number(source.carMsrp || source.msrp || 0).toLocaleString(),
+      comments: source.userComments || item.latestUserComments || "",
+      selectedOptions: getSelectedOptionsText(source.variants || source.userVariants || []),
       status: item.status || "Rejected",
       bidId: bidId,
-      carId: item.id,
+      carId: carId,
       userId: userId || "",
       dealerId: JSON.parse(localStorage.getItem("auth") || "{}")?.user?._id || "",
     };
@@ -264,7 +278,22 @@ const mapApiData = async (apiResponse) => {
 };
 
 onMounted(() => {
-  getRejectedOffers();
+  getRejectedOffers(currentPage.value);
+});
+
+// debounce timer for filter changes
+const filterTimer = ref(null);
+watch([searchText, selectedModel], () => {
+  if (filterTimer.value) clearTimeout(filterTimer.value);
+  // debounced: only reset current page (do NOT call the API) so filtering stays local
+  filterTimer.value = setTimeout(() => {
+    currentPage.value = 1;
+    filterTimer.value = null;
+  }, 400);
+});
+
+onBeforeUnmount(() => {
+  if (filterTimer.value) clearTimeout(filterTimer.value);
 });
 </script>
 
