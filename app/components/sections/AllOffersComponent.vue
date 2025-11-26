@@ -84,7 +84,8 @@
                 <div class="bg-white rounded p-2">
                   <div class="flex justify-between items-center">
                     <span class="text-primary/70">User Offer:</span>
-                    <span class="font-medium">${{ offer.userOffer }}</span>
+                    <span v-if="!offer.noPrice" class="font-medium">${{ offer.userOffer }}</span>
+                    <span v-else class="font-medium">{{ offer?.userOfferPercentage }}%</span>
                   </div>
                   <div class="flex justify-between items-center mt-1">
                     <span class="text-primary/70">MSRP:</span>
@@ -191,7 +192,8 @@
             <div class="rounded-lg border-none bg-white p-2 mt-3">
               <div class="flex justify-between border-none p-2">
                 <span class="text-[#081735] opacity-55">User Offer:</span>
-                <span class="font-semibold">${{ offer.userOffer }}</span>
+                <span v-if="!offer.noPrice" class="font-semibold">${{ offer.userOffer }}</span>
+                <span v-else class="font-semibold">{{ offer.userOfferPercentage }}%</span>
               </div>
               <span class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
 
@@ -564,7 +566,9 @@ const mapAllOffersApiData = (apiResponse) => {
       dealerId: JSON.parse(localStorage.getItem("auth") || "{}")?.user?._id || "",
       carId: item.carId ? normalizeId(item.carId) : null,
       location: "13th Street 47",
-      userOffer: Number(item.carBid || 0).toLocaleString(),
+      userOffer:  Number(item.carBid || 0).toLocaleString(),
+      userOfferPercentage:  Number(item?.discountPercentage || 0).toLocaleString(),
+      noPrice:  item?.noPrice || false,
       msrp: Number(item.carMsrp || 0).toLocaleString(),
       submissionDate: formattedDate,
       comments: item.userComments || "",
