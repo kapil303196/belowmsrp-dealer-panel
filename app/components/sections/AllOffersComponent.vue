@@ -59,7 +59,7 @@
                   <img :src="offer.image" class="w-[71px] h-12 rounded object-cover" />
                   <div>
                     <div class="font-medium text-primary">{{ offer.model }}</div>
-                    <div class="text-primary/80">{{ offer.price }}</div>
+                    <div v-if="!offer?.noPrice" class="text-primary/80">{{ offer.price }}</div>
                     <div class="text-sm text-primary/70">{{ offer.location }}</div>
                   </div>
                 </div>
@@ -87,7 +87,7 @@
                     <span v-if="!offer.noPrice" class="font-medium">${{ offer.userOffer }}</span>
                     <span v-else class="font-medium">{{ offer?.userOfferPercentage }}%</span>
                   </div>
-                  <div class="flex justify-between items-center mt-1">
+                  <div v-if="!offer.noPrice" class="flex justify-between items-center mt-1">
                     <span class="text-primary/70">MSRP:</span>
                     <span>${{ offer.msrp }}</span>
                   </div>
@@ -167,7 +167,7 @@
             <img :src="offer.image" class="w-[71px] h-12 rounded object-cover" />
             <div>
               <div class="text-[13px] font-medium text-primary">{{ offer.model }}</div>
-              <div class="text-[13px] font-medium text-primary">{{ offer.price }}</div>
+              <div v-if="!offer.noPrice" class="text-[13px] font-medium text-primary">{{ offer.price }}</div>
             </div>
           </div>
         </div>
@@ -197,7 +197,7 @@
               </div>
               <span class="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent block"></span>
 
-              <div class="flex justify-between border-none p-2 mt-1">
+              <div v-if="!offer.noPrice" class="flex justify-between border-none p-2 mt-1">
                 <span class="text-[#081735] opacity-55">Your Build MSRP:</span>
                 <span class="font-semibold">${{ offer.msrp }}</span>
               </div>
