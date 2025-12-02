@@ -27,7 +27,7 @@
             <img :src="offer.image" class="w-[71px] h-12 rounded object-cover" />
             <div>
               <div class="text-[13px] font-medium text-primary">{{ offer.model }}</div>
-              <div class="text-[13px] font-medium text-primary">{{ offer.price }}</div>
+              <div v-if="!offer.noPrice" class="text-[13px] font-medium text-primary">{{ offer.price }}</div>
             </div>
           </div>
         </div>
@@ -96,7 +96,7 @@
                   <img :src="offer.image" class="w-[71px] h-12 rounded object-cover" />
                   <div>
                     <div class="text-[13px] font-medium text-primary">{{ offer.model }}</div>
-                    <div class="text-[13px] font-medium text-primary">{{ offer.price }}</div>
+                    <div v-if="!offer.noPrice" class="text-[13px] font-medium text-primary">{{ offer.price }}</div>
                   </div>
                 </div>
               </div>
@@ -273,6 +273,7 @@ const mapApiData = async (apiResponse) => {
       carId: carId,
       userId: userId || "",
       dealerId: JSON.parse(localStorage.getItem("auth") || "{}")?.user?._id || "",
+      noPrice: source?.noPrice || false,
     };
   });
 };

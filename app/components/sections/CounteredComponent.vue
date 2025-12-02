@@ -27,7 +27,7 @@
             <img :src="offer.image" class="w-[71px] h-12 rounded object-cover" />
             <div>
               <div class="text-[13px] font-medium text-primary">{{ offer.model }}</div>
-              <div v-if="!offer.noPrice" class="text-[13px] font-medium text-primary">{{ offer.price }}</div>
+              <div v-if="!offer?.noPrice" class="text-[13px] font-medium text-primary">{{ offer.price }}11</div>
             </div>
           </div>
         </div>
@@ -139,7 +139,7 @@
                   <img :src="offer.image" class="w-[71px] h-12 rounded object-cover" />
                   <div>
                     <div class="text-[13px] font-medium text-primary">{{ offer.model }}</div>
-                    <div v-if="!offer.noPrice" class="text-[13px] font-medium text-primary">{{ offer.price }}</div>
+                    <div v-if="!offer?.noPrice" class="text-[13px] font-medium text-primary">{{ offer.price }}</div>
                   </div>
                 </div>
               </div>
@@ -273,7 +273,7 @@
         </div>
         <div class="flex-1 overflow-hidden rounded-md border border-[#E5EAF3] bg-[#F8FAFF]">
           <img v-if="previewType.startsWith('image/')" :src="previewUrl" alt="attachment" class="w-full h-full object-contain" />
-          <iframe v-else :src="previewUrl" class="w-full h-full" />
+          <iframe v-else :src="previewUrl" class="w-full h-full" allow="fullscreen" />
         </div>
         <div class="mt-3 flex justify-end gap-2">
           <button class="px-3 py-2 rounded-md bg-primary text-white text-sm" @click="closePreview">Close</button>
@@ -502,9 +502,11 @@ const previewPdf = async (offer) => {
       return;
     }
     downloadingIds.value.add(bidId);
-    const blob = await apiGetBlob(`/bid/user-bid/${bidId}/pdf`);
+    const raw = await apiGetBlob(`/bid/user-bid/${bidId}/pdf`);
+    const blob = new Blob([raw], { type: "application/pdf" });
     previewType.value = "application/pdf";
     previewUrl.value = window.URL.createObjectURL(blob);
+    console.log('previewUrl.value',previewUrl.value)
     showPreviewModal.value = true;
   } catch (e) {
     console.error("Failed to preview PDF", e);
@@ -651,7 +653,7 @@ const mapApiData = async (apiResponse) => {
       bidId,
       userAction,
       tradeInOffer,
-      noPrice: source?.noPrice || false,
+      noPrice:source?.noPrice || false,
       // _flags: parseLatestFlagsFromStatus(status), // optional, not used in UI
     };
   });
